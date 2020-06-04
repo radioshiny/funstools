@@ -294,6 +294,10 @@ class Cube2map:
             if self.x[0] > vr[0] or self.x[-1] < vr[1]:
                 warn('Given velocity range exceeds the velocity axis of cube data.')
             return [np.argmin(np.abs(self.x-float(vr[0]))), np.argmin(np.abs(self.x-float(vr[1])))+1]
+        elif isinstance(vr, float) or isinstance(vr, int):
+            if self.x[0] > vr or self.x[-1] < vr:
+                warn('Given velocity range exceeds the velocity axis of cube data.')
+            return np.argmin(np.abs(self.x-float(vr)))
         else:
             raise TypeError("'vr' (velocity range) is not a list or tuple.")
 
