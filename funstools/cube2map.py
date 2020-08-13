@@ -272,12 +272,12 @@ class Cube2map:
         Convert velocity range to channel range.
 
         Parameters:
-            vr : list or tuple
-                Velocity range, [start, end] or (start, end).
+            vr : float, list or tuple
+                Velocity value or range, [start, end] or (start, end).
 
         Returns:
             cr : list
-                Channel range, [start, end+1] ('+1' follows the python indexing rule).
+                Channel value or range, [start, end+1] ('+1' follows the python indexing rule).
         """
         if vr is None:
             if self._rmssize is None:
