@@ -307,7 +307,8 @@ class Decompose(Cube2map):
                 if int(pp/ppp*50) > pi:
                     pi += 1
                     print('#', end='')
-        fr['dv'] = fr['sd']*np.sqrt(8*np.log(2))
+        fr['dv'] = fr['sd']*np.sqrt(8.*np.log(2))
+        fr['area'] = fr['tp']*np.sqrt(2.*np.pi*fr['sd']**2.)
         self._fitres1 = fr
         print(' complete!')
         return self._fitres1
@@ -345,7 +346,8 @@ class Decompose(Cube2map):
                 if int(pp/ppp*50) > pi:
                     pi += 1
                     print('#', end='')
-        fr['dv'] = fr['sd']*np.sqrt(8*np.log(2))
+        fr['dv'] = fr['sd']*np.sqrt(8.*np.log(2))
+        fr['area'] = fr['tp']*np.sqrt(2.*np.pi*fr['sd']**2.)
         self._fitres2 = fr
         print(' complete!')
         return self._fitres2
@@ -395,7 +397,8 @@ class Decompose(Cube2map):
                 if int(pp/ppp*50) > pi:
                     pi += 1
                     print('#', end='')
-        fr['dv'] = fr['sd']*np.sqrt(8*np.log(2))
+        fr['dv'] = fr['sd']*np.sqrt(8.*np.log(2))
+        fr['area'] = fr['tp']*np.sqrt(2.*np.pi*fr['sd']**2.)
         self._fitres3 = fr
         print(' complete!')
         return self._fitres3
