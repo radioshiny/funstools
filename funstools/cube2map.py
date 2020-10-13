@@ -329,7 +329,7 @@ class Cube2map:
         if cr is None:
             cr = self.v2ch(vr)
         if isinstance(cr, list) or isinstance(cr, tuple):
-            self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)
+            self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)*self.detmask
             return self._m0
         else:
             raise TypeError("'cr' (channel range) is not a list or tuple.")
@@ -374,8 +374,8 @@ class Cube2map:
             cr = self.v2ch(vr)
         m0 = self.moment0(vr, cr)
         m1 = self.moment1(vr, cr)
-        m0[m0 <= 0] = np.nan
-        self._m2 = np.sqrt(np.sum(self.y[cr[0]:cr[1]]*self.cw*(vel[cr[0]:cr[1]]-m1)**2.)/m0)*self.detmask
+        m0[m0 == 0] = np.nan
+        self._m2 = np.sqrt(np.sum(self.y[cr[0]:cr[1]]*self.cw*(vel[cr[0]:cr[1]]-m1)**2., axis=0)/m0)*self.detmask
         return self._m2
 
     def tpeak(self, vr=None, cr=None):
