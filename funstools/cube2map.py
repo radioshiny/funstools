@@ -71,6 +71,7 @@ class Cube2map:
     _y = None
     _m0 = None
     _m1 = None
+    _m2 = None
     _wcs2d = None
     _header2d = None
     _pr = 0
@@ -235,7 +236,7 @@ class Cube2map:
         except for the channel used to measure the RMS error.
         """
         if self._m0 is None:
-            self._m0 = self.moment0()
+            self._m0 = self.moment0(cr=(self._rmssize, -self._rmssize))
         return self._m0
 
     @property
@@ -245,8 +246,14 @@ class Cube2map:
         except for the channel used to measure the RMS error.
         """
         if self._m1 is None:
-            self._m1 = self.moment1()
+            self._m1 = self.moment1(cr=(self._rmssize, -self._rmssize))
         return self._m1
+
+    @property
+    def m2(self):
+        if self._m2 is None:
+            self._m2 = self.moment2(cr=(self._rmssize, -self._rmssize))
+        return self._m2
 
     @property
     def wcs2d(self):
@@ -322,7 +329,8 @@ class Cube2map:
         if cr is None:
             cr = self.v2ch(vr)
         if isinstance(cr, list) or isinstance(cr, tuple):
-            return np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)
+            self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)
+            return self._m0
         else:
             raise TypeError("'cr' (channel range) is not a list or tuple.")
 
