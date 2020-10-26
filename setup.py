@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="funstools", # Replace with your own username
-    version="0.0.9",
+    name="funstools",  # Replace with your own username
+    version="0.0.10",
     author="Shinyoung Kim",
     author_email="radioshiny@gmail.com",
     description="FUNStools is python toolkit for FUNS project",

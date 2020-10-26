@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-def full_line_scan(loc='', vr=None, yi=1.5, cut=None):
+def full_line_scan(loc='', vr=None, yi=1.5, cut=None, smo=None, ver='otfpro'):
     """
     Interactive line scan for full data set of FUNS project.
     This recognizes only the 'fullcube' fits files in stored in the 'loc' directory.
@@ -26,45 +26,69 @@ def full_line_scan(loc='', vr=None, yi=1.5, cut=None):
             Tuple with 3 components.
             You can modify the detail elements to save and print the figure.
     """
+    if ver == 'otfpro':
+        release = False
+    elif ver == 'release':
+        release = True
+    else:
+        raise ValueError("ver = {}, full_line_scan only work for 'otfpro' or 'release' version.")
     if not len(loc) == 0:
         if not loc[-1] == '/':
             loc = loc+'/'
-    base = glob(loc+'*C18O*_fullcube.fits')
+    if smo is None:
+        smo = (2., 1.)
+    elif isinstance(smo, list) or isinstance(smo, tuple):
+        pass
+    else:
+        raise ValueError("smo = {}, smoothing factor should be given tuple, (velocity, spatial).".format(smo))
+    if release:
+        base = glob(loc+'*C18O*_match_cube.fits')
+    else:
+        base = glob(loc+'*C18O*_fullcube.fits')
     if len(base) == 0:
         raise IOError('{}: No such file.'.format(base))
     else:
         args = (base[0].split('/')[-1]).split('_')
     files = []
     # lines = ['13CO', 'C18O', 'CS', 'HCOP', 'N2HP', 'SO', 'NH2D', 'H13COP']
+    dcw = [1, 0, 1, 0, 1, 1, 0, 0]
+    acw = [0, 1, 0, 1, 0, 0, 1, 1]
+    ors = [200, 330]
     lines = ['H13COP', 'NH2D', 'N2HP', 'SO', 'HCOP', 'CS', 'C18O', '13CO']
     tlin = [r'$\mathrm{H^{13}CO^+}$', r'$\mathrm{NH_2D}$', r'$\mathrm{N_2H^+}$', 'SO', r'$\mathrm{HCO^+}$', 'CS', r'$\mathrm{C^{18}O}$', r'$\mathrm{^{13}CO}$']
     lnam = []
     tnam = []
     rs = []
     for ln, lin in enumerate(lines):
-        nam = loc+args[0]+'_'+lin+'_all_'+args[3]+'_v10_fullcube.fits'
-        nam2 = loc+args[0]+'_'+lin+'_all_'+args[3]+'_fullcube.fits'
-        if os.path.exists(nam):
-            files.append(nam)
-            rs.append(200)
+        if release:
+            nam = [loc+args[0]+'_'+lin+'_v10_match_cube.fits', loc+args[0]+'_'+lin+'_match_cube.fits']
+        else:
+            nam = [loc+args[0]+'_'+lin+'_all_'+args[3]+'_v10_fullcube.fits', loc+args[0]+'_'+lin+'_all_'+args[3]+'_fullcube.fits']
+        if os.path.exists(nam[dcw[ln]]):
+            files.append(nam[dcw[ln]])
+            rs.append(ors[dcw[ln]])
             lnam.append(lin)
             tnam.append(tlin[ln])
-        elif os.path.exists(nam2):
-            files.append(nam2)
-            rs.append(330)
+        elif os.path.exists(nam[acw[ln]]):
+            files.append(nam[acw[ln]])
+            rs.append(ors[acw[ln]])
             lnam.append(lin)
             tnam.append(tlin[ln])
         else:
-            print('{}: No such file.'.format(nam))
-    l0 = Cube2map(base[0], rmssize=200, velocity_smo=3, spatial_smo=3)
+            print('{}\n{}\n: No such files.'.format(nam[0], nam[1]))
+    if 'C18O' in lnam:
+        li = lnam.index('C18O')
+        l0 = Cube2map(files[li], rmssize=rs[li], velocity_smo=smo[0], spatial_smo=smo[1])
+    else:
+        l0 = Cube2map(files[-1], rmssize=rs[-1], velocity_smo=smo[0], spatial_smo=smo[1])
     lset = []
     for ln, lin in enumerate(files):
-        lset.append(Cube2map(lin, rmssize=rs[ln], velocity_smo=3, spatial_smo=3))
+        lset.append(Cube2map(lin, rmssize=rs[ln], velocity_smo=smo[0], spatial_smo=smo[1]))
 
     plt.ion()
     x = l0.x
     if vr is None:
-        vr = [x[200], x[-200]]
+        vr = [x[rs[-1]], x[-rs[-1]]]
     elif isinstance(vr, list) or isinstance(vr, tuple):
         pass
     else:

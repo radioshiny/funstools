@@ -112,15 +112,16 @@ def get_mask(data, snr=3., rms=None, max_rms=None, velocity_smo=1, ext=None, ext
                 if len(g) > 3 and any(y[g] > snr*rms[d, r]):
                     mask[g, d, r] = 1.
     det = np.nansum(mask, axis=0) > 4.
+    mask[:, ~det] = np.nan
     if verbose:
         print('\n[ Masking noise channels ]')
-        print('Total pixels = {:d}'.format(np.prod(rms.shape)))
-        print('Empty pixels = {:d} ; NaN pixel'.format(empty))
-        print('Noise pixels = {:d} ; > max_rms limit'.format(noisy))
-        print('Undetected pixels = {:d} ; < s/n ratio cut'.format(np.prod(rms.shape)-empty-noisy-det.sum()))
-        print('Available pixels = {:d}'.format(det.sum()))
+        print('Total pixels        = {:d}'.format(np.prod(rms.shape)))
+        print('Empty pixels        = {:d} ; NaN pixel'.format(empty))
+        print('Noise pixels        = {:d} ; > max_rms limit'.format(noisy))
+        print('Undetected pixels   = {:d} ; < s/n ratio cut'.format(np.prod(rms.shape)-empty-noisy-det.sum()))
+        print('Available pixels    = {:d}'.format(det.sum()))
         tc, dc = np.nansum(temp*0.+1.), np.nansum(mask)
-        print('-----\nMasked channels = {:d}'.format(int(tc-dc)))
+        print('-----\nMasked channels     = {:d}'.format(int(tc-dc)))
         print('Detectable channels = {:d} / {:d} ( {:.1f} % )'.format(int(dc), int(tc), dc/tc*100.))
     return mask
 

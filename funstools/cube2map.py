@@ -232,18 +232,24 @@ class Cube2map:
     @property
     def m0(self):
         """
-        Moment 0 map of the cube data obtained over entire velocity range,
-        except for the channel used to measure the RMS error.
+        Return the result of the most recently computed moment0 method.
+
+        If there is no pre-computed moment 0 map,
+        return the result of the moment0 method using the entire velocity range,
+        excluding the channel used to measure the rms error.
         """
         if self._m0 is None:
-            self._m0 = self.moment0(cr=(self._rmssize, -self._rmssize))
+            self._m0 = self.moment0(cr=(self._rmssize, -self._rmssize), verbose=False)
         return self._m0
 
     @property
     def m1(self):
         """
-        Moment 1 map of the cube data obtained over entire velocity range,
-        except for the channel used to measure the RMS error.
+        Return the result of the most recently computed moment1 method.
+
+        If there is no pre-computed moment 1 map,
+        return the result of the moment1 method using the entire velocity range,
+        excluding the channel used to measure the rms error.
         """
         if self._m1 is None:
             self._m1 = self.moment1(cr=(self._rmssize, -self._rmssize))
@@ -251,6 +257,13 @@ class Cube2map:
 
     @property
     def m2(self):
+        """
+        Return the result of the most recently computed moment2 method.
+
+        If there is no pre-computed moment 2 map,
+        return the result of the moment2 method using the entire velocity range,
+        excluding the channel used to measure the rms error.
+        """
         if self._m2 is None:
             self._m2 = self.moment2(cr=(self._rmssize, -self._rmssize))
         return self._m2
@@ -308,7 +321,7 @@ class Cube2map:
         else:
             raise TypeError("'vr' (velocity range) is not a list or tuple.")
 
-    def moment0(self, vr=None, cr=None):
+    def moment0(self, vr=None, cr=None, verbose=False):
         """
         Make moment 0 map for given velocity or channel range.
 
@@ -317,6 +330,8 @@ class Cube2map:
                 Velocity range [v1, v2]. Default is None.
             cr : list or tuple
                 Channel number range [c1, c2], Default is None.
+            verbose : bool
+                Return sigma of moment0, Default is False.
 
             If both 'vr' and 'cr' is None, 'vr' is set entire velocity range
                 except for the channel used to measure the RMS error.
@@ -325,14 +340,33 @@ class Cube2map:
 
         Returns:
             moment0 : 2d-array (image)
+
+            (optional)
+            sigma_moment0 : float
         """
         if cr is None:
             cr = self.v2ch(vr)
-        if isinstance(cr, list) or isinstance(cr, tuple):
-            self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)*self.detmask
-            return self._m0
-        else:
+        if not (isinstance(cr, list) or isinstance(cr, tuple)):
             raise TypeError("'cr' (channel range) is not a list or tuple.")
+        self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)*self.detmask
+        if verbose:
+            dch = np.sum(self.mask[cr[0]:cr[1]], axis=(1, 2)) > 0.5
+            nch = np.sum(dch)
+            if self._smoothing:
+                mrms = np.nanmedian(self.srms*self.detmask)
+            else:
+                mrms = np.nanmedian(self.rms*self.detmask)
+            m0rms = np.sqrt(nch)*mrms*self.cw
+            print('\n[ Making Moment 0 (integrated intensity) map ]')
+            print('Channel range      = {:d} ~ {:d}'.format(cr[0], cr[1]-1))
+            print('N total channel    = {:d}'.format(cr[1]-cr[0]))
+            print('N detected channel = {:d}'.format(nch))
+            print('Smoothing          = {}'.format(self._smoothing))
+            print('Median RMS         = {:.3f} K'.format(mrms))
+            print('-----\nSigma_moment0      = {:.3f} K km/s'.format(m0rms))
+            return self._m0, m0rms
+        else:
+            return self._m0
 
     def moment1(self, vr=None, cr=None):
         """
@@ -369,6 +403,23 @@ class Cube2map:
             raise TypeError("'cr' (channel range) is not a list or tuple.")
 
     def moment2(self, vr=None, cr=None):
+        """
+        Make moment 2 map for given velocity or channel range.
+
+        Parameters:
+            vr : list or tuple
+                Velocity range [v1, v2]. Default is None.
+            cr : list or tuple
+                Channel number range [c1, c2], Default is None.
+
+            If both 'vr' and 'cr' is None, 'vr' is set entire velocity range
+                except for the channel used to measure the RMS error.
+            If both 'vr' and 'cr' are given, 'cr' is used first.
+            If only one range is given without a key name, it is used as velocity.
+
+        Returns:
+            moment2 : 2d-array (image)
+        """
         vel = np.ones_like(self.data)*self.x[:, np.newaxis, np.newaxis]
         if cr is None:
             cr = self.v2ch(vr)
