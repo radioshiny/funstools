@@ -133,8 +133,9 @@ def full_line_scan(loc='', vr=None, yi=1.5, cut=None, smo=None, ver='otfpro'):
         if event.inaxes != lsmap.axes: return
         ri = int(round(event.xdata))
         di = int(round(event.ydata))
-        rd = l0.wcs2d.wcs_pix2world(ri, di, 0)
-        px = [i.wcs_world2pix(rd[0], rd[1], 0) for i in wset]
+        if not release:
+            rd = l0.wcs2d.wcs_pix2world(ri, di, 0)
+            px = [i.wcs_world2pix(rd[0], rd[1], 0) for i in wset]
         lslin.clear()
         lslin.set_xlabel(r'$V_\mathrm{LSR}$ [km/s]')
         lslin.set_ylabel(r'$T_\mathrm{A}^* [K]$')
@@ -142,8 +143,11 @@ def full_line_scan(loc='', vr=None, yi=1.5, cut=None, smo=None, ver='otfpro'):
         lslin.set_ylim(*yr)
         lslin.set_yticks(np.arange(0, yr[1], yi))
         for li, ld in enumerate(lset):
-            r = int(round(px[li][0].item()))
-            d = int(round(px[li][1].item()))
+            if release:
+                r, d = ri*1, di*1
+            else:
+                r = int(round(px[li][0].item()))
+                d = int(round(px[li][1].item()))
             lslin.plot([x[0], x[-1]], [li*yi, li*yi], lw=1, alpha=0.5, color='black')
             # lslin.plot([x[0], x[-1]], [3*l0.srms[d, r], 3*l0.srms[d, r]], ls='dotted', lw=1, alpha=0.3, color='blue')
             # lslin.plot([x[0], x[-1]], [3*ld.rms[d, r]+li*yi, 3*ld.rms[d, r]+li*yi], ls='dotted', lw=1, alpha=0.5, color='blue')
