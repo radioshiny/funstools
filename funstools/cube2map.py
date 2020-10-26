@@ -350,8 +350,8 @@ class Cube2map:
             raise TypeError("'cr' (channel range) is not a list or tuple.")
         self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)*self.detmask
         if verbose:
-            dch = np.sum(self.mask[cr[0]:cr[1]], axis=(1, 2)) > 0.5
-            nch = np.sum(dch)
+            dch = np.nansum(self.mask[cr[0]:cr[1]], axis=(1, 2))
+            nch = np.sum(dch > dch.max()*0.01)
             if self._smoothing:
                 mrms = np.nanmedian(self.srms*self.detmask)
             else:
@@ -362,8 +362,8 @@ class Cube2map:
             print('N total channel    = {:d}'.format(cr[1]-cr[0]))
             print('N detected channel = {:d}'.format(nch))
             print('Smoothing          = {}'.format(self._smoothing))
-            print('Median RMS         = {:.3f} K'.format(mrms))
-            print('-----\nSigma_moment0      = {:.3f} K km/s'.format(m0rms))
+            print('Median RMS_line    = {:.3f} K'.format(mrms))
+            print('-----\nRMS_moment0        = {:.3f} K km/s'.format(m0rms))
             return self._m0, m0rms
         else:
             return self._m0
