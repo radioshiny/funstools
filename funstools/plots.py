@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-def full_line_scan(loc='', vr=None, yi=1.5, cut=None, smo=None, ver='otfpro'):
+def full_line_scan(loc='', vr=None, yi=1.5, cut=None, ver='otfpro'):
     """
     Interactive line scan for full data set of FUNS project.
     This recognizes only the 'fullcube' fits files in stored in the 'loc' directory.
@@ -35,12 +35,6 @@ def full_line_scan(loc='', vr=None, yi=1.5, cut=None, smo=None, ver='otfpro'):
     if not len(loc) == 0:
         if not loc[-1] == '/':
             loc = loc+'/'
-    if smo is None:
-        smo = (2., 1.)
-    elif isinstance(smo, list) or isinstance(smo, tuple):
-        pass
-    else:
-        raise ValueError("smo = {}, smoothing factor should be given tuple, (velocity, spatial).".format(smo))
     if release:
         base = glob(loc+'*C18O*_match_cube.fits')
     else:
@@ -78,12 +72,12 @@ def full_line_scan(loc='', vr=None, yi=1.5, cut=None, smo=None, ver='otfpro'):
             print('{}\n{}\n: No such files.'.format(nam[0], nam[1]))
     if 'C18O' in lnam:
         li = lnam.index('C18O')
-        l0 = Cube2map(files[li], rmssize=rs[li], velocity_smo=smo[0], spatial_smo=smo[1])
+        l0 = Cube2map(files[li], rmssize=rs[li], velocity_smo=3, spatial_smo=2)
     else:
-        l0 = Cube2map(files[-1], rmssize=rs[-1], velocity_smo=smo[0], spatial_smo=smo[1])
+        l0 = Cube2map(files[-1], rmssize=rs[-1], velocity_smo=3, spatial_smo=2)
     lset = []
     for ln, lin in enumerate(files):
-        lset.append(Cube2map(lin, rmssize=rs[ln], velocity_smo=smo[0], spatial_smo=smo[1]))
+        lset.append(Cube2map(lin, rmssize=rs[ln], smoothing=False, masking=False))
 
     plt.ion()
     x = l0.x
@@ -154,7 +148,7 @@ def full_line_scan(loc='', vr=None, yi=1.5, cut=None, smo=None, ver='otfpro'):
             # lslin.plot([x[0], x[-1]], [3*ld.rms[d, r]+li*yi, 3*ld.rms[d, r]+li*yi], ls='dotted', lw=1, alpha=0.5, color='blue')
             # lslin.step(x, l0.sdata[:, d, r], color='blue', lw=1, alpha=0.6)
             if (0 <= r < ld.nr) and (0 <= d < ld.nd):
-                cp.set_offsets([r-1, d-1])
+                cp.set_offsets([r, d])
                 if lnam[li] == 'N2HP':
                     lslin.step(ld.x+8., ld.data[:, d, r]+li*yi, color='red', lw=1)
                 elif lnam[li] == '13CO':
