@@ -59,7 +59,7 @@ fig.savefig('rms.pdf')
 
 `Cube2map.moment0()` and `Cube2map.m0` return the integrated intensity map of input cube data.
 
-![equation](https://latex.codecogs.com/svg.latex?M_0=\Delta v\sum I_i)
+![equation](https://latex.codecogs.com/svg.latex?M_0=\Delta&space;v\sum&space;I_i)
 
 ```python
 # Using velocity range
@@ -90,7 +90,7 @@ fig.savefig('moment0.pdf')
 
 `Cube2map.moment1()` and `Cube2map.m1` return the intensity weighted mean velocity map of input cube data.
 
-![equation](https://latex.codecogs.com/svg.latex?M_1=\frac{\sum I_i v_i}{M_0})
+![equation](https://latex.codecogs.com/svg.latex?M_1=\frac{\sum&space;I_i&space;v_i}{M_0})
 
 ```python
 # Using channel range
@@ -115,7 +115,7 @@ fig.savefig('moment1.pdf')
 ![equation](https://latex.codecogs.com/svg.latex?M_2=\sqrt{\frac{\sum&space;I_i\left(v_i-M_1\right)^2}{M_0}})
 
 In line equation test 
-![equation](https://render.githubusercontent.com/render/math?math=M_2=\sqrt{\frac{\sum I_i\left(v_i-M_1\right)^2}{M_0}})
+![equation](https://render.githubusercontent.com/render/math?math=M_2=\sqrt{\frac{\sum&space;I_i\left(v_i-M_1\right)^2}{M_0}})
 in line equation test
 
 ```python
