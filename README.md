@@ -97,15 +97,7 @@ fig.savefig('moment0.pdf')
 cube.moment1(cr=[ch1, ch2])
 
 # Return the most recently computed moment 1 map
-# If there is not pre-computed moment 1 map,
-#    return the moment 0 map with cr=[rmssize, -rmssize]
 cube.m1
-
-# Make figure
-fig = plt.figure()
-ax = fig.add_subplot(111, projection=cube.wcs2d)
-ax.imshow(cube.m1, origin='lower', vmin=cube.x[ch1], vmax=cube.x[ch2])
-fig.savefig('moment1.pdf')
 ```
 
 #### Moment 2 (velocity dispersion)
@@ -114,24 +106,12 @@ fig.savefig('moment1.pdf')
 
 ![equation](https://latex.codecogs.com/svg.latex?M_2=\sqrt{\frac{\sum&space;I_i\left(v_i-M_1\right)^2}{M_0}})
 
-In line equation test 
-![equation](https://render.githubusercontent.com/render/math?math=M_2=\sqrt{\frac{\sum&space;I_i\left(v_i-M_1\right)^2}{M_0}})
-in line equation test
-
 ```python
 # Using channel range
 cube.moment2(cr=[ch1, ch2])
 
 # Return the most recently computed moment 2 map
-# If there is not pre-computed moment 2 map,
-#    return the moment 0 map with cr=[rmssize, -rmssize]
 cube.m2
-
-# Make figure
-fig = plt.figure()
-ax = fig.add_subplot(111, projection=cube.wcs2d)
-ax.imshow(cube.m2, origin='lower', vmin=0.1, vmax=0.5)
-fig.savefig('moment1.pdf')
 ```
 
 #### Example script for `Cube2map.moment#()`
@@ -152,7 +132,7 @@ cube = Cube2map('/.../TRAO-FUNS/SerB/release/SerB_C18O_v10_match_cube.fits',
 xyr = float(cube.nr/cube.nd)
 
 # draw figure using Multiaxes
-mx = Multiaxes(2, 3, 1, xyr, 0.36, 0.56, cb=0.1, clab=0.34, proj=cube.wcs2d)
+mx = Multiaxes(2, 3, 1, xyr, 0.36, 0.56, cb=0.1, clab=0.34, scale=0.7, proj=cube.wcs2d)
 mx.shareaxes((False, True), 0.1)
 fig, ax, cax = mx.drawfig()
 
@@ -190,7 +170,7 @@ fig.savefig('images/SerB_C18O_moment_maps.png')
 
 ### Channel maps
 
-`Cube2map.chmap()` return the channel maps and their label of velocity range.
+`Cube2map.chmap()` return the channel maps and labels for their velocity ranges.
 
 ```python
 # Using velocity range
@@ -215,7 +195,7 @@ cube = Cube2map('/.../TRAO-FUNS/SerB/release/SerB_C18O_v10_match_cube.fits',
                 rmssize=rs, velocity_smo=2, spatial_smo=2)
 
 # draw figure using Multiaxes
-mx = Multiaxes(2, 3, 2, 1, 0.36, 0.56, margin=(0.02, 0.02, 0.71, 0.02), proj=cube.wcs2d)
+mx = Multiaxes(2, 3, 2, 1, 0.36, 0.56, margin=(0.02, 0.02, 0.71, 0.02), scale=0.7, proj=cube.wcs2d)
 mx.shareaxes((True, True), 0.1)
 fig, ax, _ = mx.drawfig()
 cax = mx.sharecolorbar('right', 0.15, 0.1)
@@ -233,7 +213,7 @@ for i in range(6):
     iax.set_xlim(26.5, 66.5)
     iax.set_ylim(163.5, 203.5)
     iax.annotate(labels[i]+' km/s', xy=(0.55, 0.05), xycoords='axes fraction', 
-                 ha='center', va='baseline', color='white', fontsize='x-large')
+                 ha='center', va='baseline', color='white', fontsize='large')
     if i == 3:
         iax.coords[0].set_axislabel('R.A. (J2000)')
         iax.coords[1].set_axislabel('Dec. (J2000)')
@@ -251,7 +231,30 @@ fig.savefig('images/SerB_C18O_channel_maps.png')
 
 ### Line scanning
 
-(in preparation)
+`Cube2map.line_scan()` is the viewer of line profiles for 3 by 3 pixels.
+
+Since the `onclick` event is activated, you can move a location by clicking a
+pixel on the left intensity map or clicking the direction you want to go on the
+right line profile map.
+
+```python
+# set the velocity range (x-axis range of plot)
+cube.line_scan(vr=(5.5, 11.))
+```
+
+![example](./images/SerB_C18O_line_scan.png)
+
+### Full line set scanning
+
+`full_line_scan()` is the viewer of line profiles for full line sets of TRAO-FUNS.
+
+```python
+from funstools import full_line_scan
+
+loc = '/.../TRAO-FUNS/SerB/release/'
+full_line_scan(loc, vr=)
+
+``` 
 
 ### Gaussian decomposing
 

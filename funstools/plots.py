@@ -116,6 +116,7 @@ def full_line_scan(loc='', vr=None, yi=1.5, cut=None, smo=None, ver='otfpro'):
     lsmap.set_xlabel('R.A.')
     lsmap.set_ylabel('Dec.')
     lsmap.imshow(imap, origin='lower', vmin=0, cmap='inferno')
+    cp = lsmap.scatter(-100, -100, s=60, color='lime')
     lsmap.set_xlim(rcut[0]-0.5, rcut[1]-0.5)
     lsmap.set_ylim(dcut[0]-0.5, dcut[1]-0.5)
     # line plot
@@ -153,6 +154,7 @@ def full_line_scan(loc='', vr=None, yi=1.5, cut=None, smo=None, ver='otfpro'):
             # lslin.plot([x[0], x[-1]], [3*ld.rms[d, r]+li*yi, 3*ld.rms[d, r]+li*yi], ls='dotted', lw=1, alpha=0.5, color='blue')
             # lslin.step(x, l0.sdata[:, d, r], color='blue', lw=1, alpha=0.6)
             if (0 <= r < ld.nr) and (0 <= d < ld.nd):
+                cp.set_offsets([r-1, d-1])
                 if lnam[li] == 'N2HP':
                     lslin.step(ld.x+8., ld.data[:, d, r]+li*yi, color='red', lw=1)
                 elif lnam[li] == '13CO':
