@@ -112,7 +112,11 @@ fig.savefig('moment1.pdf')
 
 `Cube2map.moment2()` and `Cube2map.m2` return the intensity weighted mean velocity map of input cube data.
 
-![equation](https://latex.codecogs.com/svg.latex?M_2=\sqrt{\frac{\sum I_i\left(v_i-M_1\right)^2}{M_0}})
+![equation](https://latex.codecogs.com/svg.latex?M_2=\sqrt{\frac{\sum&space;I_i\left(v_i-M_1\right)^2}{M_0}})
+
+In line equation test 
+![equation](https://render.githubusercontent.com/render/math?math=M_2=\sqrt{\frac{\sum I_i\left(v_i-M_1\right)^2}{M_0}})
+in line equation test
 
 ```python
 # Using channel range
