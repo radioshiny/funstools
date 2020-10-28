@@ -6,7 +6,7 @@
 needed for performing FUNS project with python. It is based on the `numpy` and 
 `astropy` packages, which have been validated by astronomers for a long time.
 
-## Install
+## Installation
 
 ```bash
 pip install git+https://github.com/radioshiny/funstools.git
@@ -18,7 +18,7 @@ pip install git+https://github.com/radioshiny/funstools.git
 `matplotlib`
 `scipy`
 
-## User Manual
+## User Documentations
 
 ### RMS noise map
 
@@ -61,6 +61,8 @@ ax = fig.add_subplot(111, projection=cube.wcs2d)
 ax.imshow(cube.rms, origin='lower')
 fig.savefig('rms.pdf')
 ```
+
+---
 
 ### Moments maps
 
@@ -180,6 +182,8 @@ fig.savefig('images/SerB_C18O_moment_maps.png')
 
 ![example](./images/SerB_C18O_moment_maps.png) 
 
+---
+
 ### Channel maps
 
 `funstools.Cube2map.chmap()` 
@@ -242,6 +246,8 @@ fig.savefig('images/SerB_C18O_channel_maps.png')
 
 ![example](./images/SerB_C18O_channel_maps.png) 
 
+---
+
 ### Line scanning
 
 `funstools.Cube2map.line_scan()` is 
@@ -257,6 +263,8 @@ cube.line_scan(vr=(5.5, 11.))
 ```
 
 ![example](./images/SerB_C18O_line_scan.png)
+
+---
 
 ### Full line set scanning
 
@@ -280,6 +288,8 @@ full_line_scan(loc, vr=(3, 13), ver='release')
 
 ![example](./images/SerB_full_line_scan.png)
 
+---
+
 ### Gaussian decomposing
 
 `funstools.Decompose` is a python class that 
@@ -291,7 +301,7 @@ from funstools import Decompose
 
 path = '/.../TRAO-FUNS/OriB1/release/'
 cube = Decompose(path+'OriB1_C18O_v10_match_cube.fits',
-                 rmssize=200, spasmo_find=5, velsmo_find=3, spasmo_fit=1,
+                 rmssize=200, spasmo_find=5, velsmo_find=5, spasmo_fit=1,
                  velsmo_fit=2)
 cube.run_decompose(save=path+'OriB1_C18O_decompose_result.dat')
 ```
@@ -524,9 +534,13 @@ fitres = read(path+'OriB1_C18O_decompose_result.dat')
 cube.plot_fit(fitres, vr=(6, 12))
 ```
 
+---
+
 ### Finding velocity-coherent structure
 
 (in prepareation)
+
+---
 
 ### Calculating physical properties
 
