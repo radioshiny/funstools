@@ -23,28 +23,37 @@ pip install git+https://github.com/radioshiny/funstools.git
 ### RMS noise map
 
 #### Using `get_rms`
-`get_rms` returns the RMS noise map of input cube data.
+
+`funstools.get_rms` returns the RMS noise map of input cube data.
+
 ```python
 from funstools import get_rms
 rms = get_rms(cube, where='both', size=200)
 ```
 
 #### Using `Cube2map`
-`Cube2map` is more useful to make maps including RMS noise map from cube data.
+
+`funstools.Cube2map` is more useful 
+to make maps including RMS noise map from cube data.
+
 ```python
 from funstools import Cube2map
 a = Cube2map('sample_cube.fits', getrms='both', rmssize=200, velocity_smo=2, spatial_smo=2)
 rms = cube.rms
 rms_smoothed = cube.srms
 ```
+
 You can save maps you made to fits using `save_fits`.  
 `Cube2map.header2d` is FITS header for 2d-image data.
+
 ```python
 from funstools import save_fits
 save_fits('rms.fits', cube.rms, cube.header2d, overwrite=True)
 save_fits('rms_smoothed.fits', cube.srms, cube.header2d, overwrite=True)
 ```
+
 `Cube2map.wcs2d` is 2d (RA-Dec) wcs information for matplotlib projection.
+
 ```python
 from matplotlib import pyplot as plt
 fig = plt.figure()
@@ -57,7 +66,8 @@ fig.savefig('rms.pdf')
 
 #### Moment 0 (integrated intensity)
 
-`Cube2map.moment0()` and `Cube2map.m0` return the integrated intensity map of input cube data.
+`funstools.Cube2map.moment0()` and `funstools.Cube2map.m0` 
+return the integrated intensity map of input cube data.
 
 ![equation](https://latex.codecogs.com/svg.latex?M_0=\Delta&space;v\sum&space;I_i)
 
@@ -88,7 +98,8 @@ fig.savefig('moment0.pdf')
 
 #### Moment 1 (intensity weighted mean velocity)
 
-`Cube2map.moment1()` and `Cube2map.m1` return the intensity weighted mean velocity map of input cube data.
+`funstools.Cube2map.moment1()` and `funstools.Cube2map.m1` 
+return the intensity weighted mean velocity map of input cube data.
 
 ![equation](https://latex.codecogs.com/svg.latex?M_1=\frac{\sum&space;I_i&space;v_i}{M_0})
 
@@ -102,7 +113,8 @@ cube.m1
 
 #### Moment 2 (velocity dispersion)
 
-`Cube2map.moment2()` and `Cube2map.m2` return the intensity weighted mean velocity map of input cube data.
+`funstools.Cube2map.moment2()` and `funstools.Cube2map.m2` 
+return the intensity weighted mean velocity map of input cube data.
 
 ![equation](https://latex.codecogs.com/svg.latex?M_2=\sqrt{\frac{\sum&space;I_i\left(v_i-M_1\right)^2}{M_0}})
 
@@ -170,7 +182,8 @@ fig.savefig('images/SerB_C18O_moment_maps.png')
 
 ### Channel maps
 
-`Cube2map.chmap()` return the channel maps and labels for their velocity ranges.
+`funstools.Cube2map.chmap()` 
+return the channel maps and labels for their velocity ranges.
 
 ```python
 # Using velocity range
@@ -231,11 +244,12 @@ fig.savefig('images/SerB_C18O_channel_maps.png')
 
 ### Line scanning
 
-`Cube2map.line_scan()` is the viewer of line profiles for 3 by 3 pixels.
+`funstools.Cube2map.line_scan()` is 
+the viewer of line profiles for 3 by 3 pixels.
 
-Since the `onclick` event is activated, you can move a location by clicking a
-pixel on the left intensity map or clicking the direction you want to go on the
-right line profile map.
+Since the `onclick` event is activated, 
+you can move a location by clicking a pixel on the left intensity map 
+or clicking the direction you want to go on the right line profile map.
 
 ```python
 # set the velocity range (x-axis range of plot)
@@ -246,20 +260,274 @@ cube.line_scan(vr=(5.5, 11.))
 
 ### Full line set scanning
 
-`full_line_scan()` is the viewer of line profiles for full line sets of TRAO-FUNS.
+`funstools.full_line_scan()` is 
+the viewer of line profiles for full line sets of TRAO-FUNS.
+
+Since the `onclick` event is activated, 
+you can move a location by clicking a pixel on the left intensity map.
 
 ```python
 from funstools import full_line_scan
 
-loc = '/.../TRAO-FUNS/SerB/release/'
-full_line_scan(loc, vr=)
+# For the original otfpro output data
+loc = '/.../TRAO-FUNS/SerB/fits/'
+full_line_scan(loc, vr=(3, 13), ver='otfpro')
 
+# For the released data
+loc = '/.../TRAO-FUNS/SerB/release/'
+full_line_scan(loc, vr=(3, 13), ver='release')
 ``` 
+
+![example](./images/SerB_full_line_scan.png)
 
 ### Gaussian decomposing
 
+`funstools.Decompose` is a python class that 
+automatically decomposes multiple Gaussian components 
+from the C<sup>18</sup>O molecular line cube data of the TRAO-FUNS observations.
 
+```python
+from funstools import Decompose
+
+path = '/.../TRAO-FUNS/OriB1/release/'
+cube = Decompose(path+'OriB1_C18O_v10_match_cube.fits',
+                 rmssize=200, spasmo_find=5, velsmo_find=3, spasmo_fit=1,
+                 velsmo_fit=2)
+cube.run_decompose(save=path+'OriB1_C18O_decompose_result.dat')
+```
+
+* `cube` &mdash; path of input cube data.
+* `ext` &mdash; extension number of fits file. 
+Default is the first extension with image (2-D) data.
+* `getrms` &mdash; ('left', 'right', or 'both') 
+location of baseline channels to measure rms noise level.
+* `rmssize` &mdash; size of baseline channels to measure rms noise level.
+* `max_rms` &mdash; maximum rms level to mask noisy pixels. 
+* `snr` &mdash; signal-to-noise ratio to mask undetected pixels.
+
+`funstools.Decompose` performs 
+the spatial and velocity smoothing of the input cube data in STEP 1. 
+The spatial smoothing is aimed at ensuring spatial consistency 
+and avoiding local fluctuations 
+when estimating the number of velocity components. 
+The velocity smoothing improves the signal-to-noise ratio 
+by reducing the effect of noise.
+
+* `spasmo_find` & `velsmo_find` &mdash; 
+spatial and velocity smoothing factors in STEP 1
+
+However, excessive smoothing degrades spatial and velocity resolutions 
+and impairs the detail of physical and kinematic information 
+presented by individual spectrum (or pixels). 
+Thus, in STEP 2 and 3, 
+different smoothing factors from STEP 1 are used 
+to achieve the spatial continuity and signal-to-noise ratio 
+at the minimum required level.
+
+* `spasmo_fit` & `velsmo_fit` &mdash; 
+spatial and velocity smoothing factors fot fitting in STEP 2 and 3
+
+The velocity position (mean velocity) of the specific velocity component 
+determined in STEP 1 needs to be maintained 
+without significant change in the subsequent fitting process. 
+This is because there can be countless mathematical solutions 
+when decomposing a composite spectrum of velocity components 
+overlapping each other with a small velocity difference. 
+
+* `mlim` &mdash; limit of mean velocity variation in optimization
+
+The linewidth of the individual velocity components 
+also needs to be limited in an appropriate range 
+as it should not be smaller than the channel width of the spectrum 
+or larger than a physically possible value.
+
+* `wmin` & `wmax` &mdash; minimum and maximum limit of FWHM of line width
+
+In optimization process using `curve_fit`, the `bounds` key is set as ...
+
+```python
+# mi = initial guess of mean
+curve_fit(..., bounds={'mean': (mi-mlim, mi+mlim), 'stddev': (wmin, wmax)})
+```
+
+`funstools.Decompose.run_decompose()` 
+continuously performs the following three-step fitting 
+and finally returns a table of decomposed Gaussian components.
+
+#### STEP 1: Estimating the number of components and initial guess for fitting
+
+The C<sup>18</sup>O molecular line spectra of the filamentary molecular clouds 
+obtained from the TRAO-FUNS observations appears in the form of multiple 
+velocity compoents overlapped in the line of sight. 
+A minimum of one or two to a maximum of six or seven velocity components 
+are identified in a spectrum 
+and distributed within a narrow velocity range of 2&ndash;6 km/s. 
+
+It is very difficult to decompose these spectra 
+into multiple Gaussian components, 
+especially in the case where each peak is not clearly distinguishable 
+and appears as a shoulder or a skewed profile with small velocity differences. 
+For reliable multiple Gaussian decomposition, 
+it is particularly important to determine the following paramters.
+
+* ***N*<sub>c</sub>** &mdash; The number of Gaussian components of each spectrum
+* ***a*<sub>i</sub>**, ***m*<sub>i</sub>**, ***s*<sub>i</sub>** &mdash; 
+Initial Gaussian parameters of each velocity component
+    * *a*<sub>i</sub> = amplitute (or peak intensity)
+    * *m*<sub>i</sub> = mean velocity (or velocity position)
+    * *s*<sub>i</sub> = standard deviation (or velocity dispersion)
+
+*N*<sub>c</sub> and initial Gaussian parameters
+(*a*<sub>i</sub>, *m*<sub>i</sub>, *s*<sub>i</sub>) 
+is determined by `funstools.find_comps()`.
+*N*<sub>c</sub> and *m*<sub>i</sub> of each pixel is 
+initially determined by `funstools.predict_peaks()` 
+using the python functions of `numpy.gradient` 
+and `scipy.signal.find_peaks`. 
+`numpy.gradient` returns the gradient of an N-dimensional array 
+and `scipy.signal.find_peaks` takes a 1-dimensional array 
+and finds all local maxima by simple comparison of neighboring values 
+with conditions for selecting.
+
+```python
+def predict_peaks(spectrum, rms)
+    grad = -numpy.gradient(numpy.gradient(spectrum))
+    peaks, _ = scipy.signal.find_peaks(grad, prominence=rms/3)
+    return peaks[spectrum[peaks] > rms]
+```
+
+The initial *N*<sub>c</sub> and *m*<sub>i</sub> are adjusted 
+to a value with spatial continuity via spatial smoothing. 
+The initial *a*<sub>i</sub> is assumed to be 
+the intensity of channel whose velocity is M in the smoothed spectrum, 
+and the initial *s*<sub>i</sub> is assumed 0.2 km/s 
+which is about the minimum value of the C18O line width 
+measured in the TRAO-FUNS target clouds. 
+
+The `funstools.Decompose.initial_fit()` optimizes 
+this initial Gaussian parameters 
+(*a*<sub>i</sub>, *m*<sub>i</sub>, *s*<sub>i</sub>) 
+to accurately reproduce smoothed spectrum 
+using `scipy.optimize.curve_fit` and multiple Gaussian function 
+expressed as the sum of *N*<sub>c</sub> Gaussian functions.
+Gaussian parameters for each velocity component of each pixel 
+determined by `funstools.Decompose.initial_fit()` 
+are returned as a table.
+
+```python
+# initial_fit returns a result table
+fitres1 = cube.initial_fit()
+
+# also automatically saved in Decompose.initial_fit_result
+#    without assigning variable
+cube.initial_fit()
+fitres1 = cube.initial_fit_result
+```
+
+The resulting table has 9 columns 
+(`rp`, `dp`, `tn`, `cn`, `tp`, `vp`, `sd`, `dv`, and `area`).
+
+* `rp` &mdash; pixel coordinate in x-axis (R.A.)
+* `dp` &mdash; pixel coordinate in y-axis (Dec.)
+* `tn` &mdash; *N*<sub>c</sub>, total number of components in this pixel
+* `cn` &mdash; order of this component in this pixel
+* `tp` &mdash; *a*<sub>i</sub>, amplitute or peak intensity of this component
+* `vp` &mdash; *m*<sub>i</sub>, 
+mean velocity or velocity position  of this component
+* `sd` &mdash; *s*<sub>i</sub>, 
+standard deviation, velocity dispersion or line width of this component
+* `dv` &mdash; FWHM width of this component
+* `area` &mdash; Gaussian area or integrated intensity of this component
+
+`funstools.Decompose.plot_fit()` is a simple and interactive viewer 
+to scan the fitting result.
+
+```python
+cube.plot_fit(fitres1, vr=(6, 12))
+```
+
+![example](./images/OriB1_C18O_initial_result.png)
+
+#### STEP 2: Multiple Gaussian fitting using initial guess
+
+Since the Gaussian parameters obtained in STEP 1 
+is optimized for the smoothed spectrum, 
+it still does not reproduce the original spectrum of each pixel. 
+In STEP 2, multiple Gaussian fitting is again performed 
+for the spectrum of each pixel with less or no smoothing 
+using the result of STEP 1 as initial guess.
+
+```python
+cube.second_fit()
+fitres2 = cube.second_fit_result
+cube.plot_fit(fitres2, vr=(6, 12))
+```
+
+![example](./images/OriB1_C18O_second_result.png)
+
+#### STEP 3: Final fitting for spatial continuity
+
+The decomposed velocity components will not be structures 
+that exist individually for each pixel, 
+but rather velocity coherent structures 
+that exist across many pixels. 
+For a mathematically more complete solution (with minimum chi-square), 
+the composite spectrum of the decomposed velocity components 
+can more accurately reproduce the observed spectrum of the pixel. 
+However, a solution with high spatial continuity 
+is more valuable physically or kinematically, 
+even if it is less perfect mathematically. 
+
+In contrast, if the spatial continuity is too enforced 
+in the decomposition process, 
+it cannot be ruled out that 
+false continuity that does not exist in nature 
+will contaminate the decomposition result.
+
+**The level of spatial continuity to be implemented is still under discussion.**
+
+In STEP 3 of the current version of `funstools.Decompose`, 
+an initial guess is determined 
+based on the decomposition result of surrounding pixels, 
+and the final multiple Gaussian fitting is performed 
+using this to derive a more spatially continuous solution.
+
+```python
+cube.final_fit()
+fitres3 = cube.final_fit_result
+cube.plot_fit(fitres3, vr=(6, 12))
+```
+
+![figure](./images/OriB1_C18O_final_result.png)
+
+#### Using `Decompose.run_decompose()`
+
+`funstools.Decompose.run_decompose()` 
+sequentially performs STEP 1, 2, and 3 listed above 
+and returns the final result. 
+Results for each step can also be called.
+
+```python
+# excute sequentially all STEP
+cube.run_decompose(save=path+'OriB1_C18O_decompose_result.dat')
+
+# call results for each STEP
+fitres1 = cube.initial_fit_result
+fitres2 = cube.second_fit_result
+fitres3 = cube.final_fit_result
+
+# loading previously saved decomposing result
+from astropy.io.ascii import read
+fitres = read(path+'OriB1_C18O_decompose_result.dat')
+
+# plot decomposing result
+cube.plot_fit(fitres, vr=(6, 12))
+```
 
 ### Finding velocity-coherent structure
 
+(in prepareation)
+
 ### Calculating physical properties
+
+(in prepareation)

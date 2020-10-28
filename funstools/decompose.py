@@ -150,7 +150,7 @@ class Decompose(Cube2map):
         """
         if self._comps is None:
             self._comps, self._nc = find_comps(self.mdata_for_finding, self.rms_for_finding,
-                                              self.det, self._spasmo_find, 1.5*self._velsmo_find)
+                                               self.det, self._spasmo_find, self._velsmo_find)
         return self._comps
 
     @property
@@ -161,7 +161,7 @@ class Decompose(Cube2map):
         """
         if self._nc is None:
             self._comps, self._nc = find_comps(self.mdata_for_finding, self.rms_for_finding,
-                                              self.det, self._spasmo_find, 1.5*self._velsmo_find)
+                                              self.det, self._spasmo_find, self._velsmo_find)
         return self._nc
 
     @property
