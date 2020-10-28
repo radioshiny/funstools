@@ -484,7 +484,7 @@ it cannot be ruled out that
 false continuity that does not exist in nature 
 will contaminate the decomposition result.
 
-**The level of spatial continuity to be implemented is still under discussion.**
+**It is still contemplating at what level and how to consider spatial continuity.**
 
 In STEP 3 of the current version of `funstools.Decompose`, 
 an initial guess is determined 
