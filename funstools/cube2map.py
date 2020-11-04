@@ -465,7 +465,7 @@ class Cube2map:
         weight = float(ci[-1]-ci[0])/float(mn)/cn.astype(float)
         cm = cm*weight[:, np.newaxis, np.newaxis]
         vv = self.x[ci]
-        return cm, [r'${} \le v < {}$'.format(vv[i], vv[i+1]) for i in range(mn)]
+        return cm, [r'${} \leqq v < {}$'.format(vv[i], vv[i+1]) for i in range(mn)]
 
     def line_scan(self, vr=None, yr=None):
         """
