@@ -460,9 +460,12 @@ class Cube2map:
         cm = np.zeros((mn, self.nd, self.nr))
         for i in range(mn):
             cm[i] = self.moment0(cr=[ci[i], ci[i+1]])
-        v1 = self.x[ci]
-        v2 = self.x[ci-1]
-        return cm, [str(v1[i])+' ~ '+str(v2[i+1]) for i in range(mn)]
+        # normalizing intensities because number of channel values are different.
+        cn = ci[1:]-ci[:-1]
+        weight = float(ci[-1]-ci[0])/float(mn)/cn.astype(float)
+        cm = cm*weight[:, np.newaxis, np.newaxis]
+        vv = self.x[ci]
+        return cm, [r'${} \le v < {}$'.format(vv[i], vv[i+1]) for i in range(mn)]
 
     def line_scan(self, vr=None, yr=None):
         """

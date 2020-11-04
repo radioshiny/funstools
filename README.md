@@ -1,15 +1,18 @@
 # FUNStools
 
-`funstools` is python toolkit for FUNS project.
+`funstools` is a python toolkit for the TRAO-FUNS data analysis 
+(S. Kim et al. 2020, in preparation).
 
-`funstools` is a toolkit that contains the useful functions and core tools 
-needed for performing FUNS project with python. It is based on the `numpy` and 
-`astropy` packages, which have been validated by astronomers for a long time.
+`funstools` is a python toolkit 
+that contains the useful functions and core tools 
+needed for the analysis of TRAO-FUNS project. 
+It is based on the `astropy`, `scipy`, and `matplotlib` packages, 
+which are well used in astrophysics.
 
 ## Installation
 
 ```bash
-pip install git+https://github.com/radioshiny/funstools.git
+pip install git+https://github.com/radioshiny/funstools
 ```
 
 ## Requirement
