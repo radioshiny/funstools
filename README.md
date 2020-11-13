@@ -41,7 +41,7 @@ to make maps including RMS noise map from cube data.
 
 ```python
 from funstools import Cube2map
-a = Cube2map('sample_cube.fits', getrms='both', rmssize=200, velocity_smo=2, spatial_smo=2)
+cube = Cube2map('sample_cube.fits', getrms='both', rmssize=200, velocity_smo=2, spatial_smo=2)
 rms = cube.rms
 rms_smoothed = cube.srms
 ```
