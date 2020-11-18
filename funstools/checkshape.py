@@ -165,11 +165,11 @@ def check_velo(hdu, ext=None):
         HDU (image data and header)
     """
     hdu = get_fits(hdu, 'hdu', ext)
-    h = hdu.header
+    h = hdu.header.copy()
     if not h['CTYPE3'] in ['VRAD', 'FREQ']:
         raise TypeError('{} is not supported type.'.format(h['CTYPE3']))
     ch = (np.arange(h['NAXIS3'])+1.-h['CRPIX3'])*h['CDELT3']+h['CRVAL3']
-    cp = h['CRPIX3']
+    cp = h['CRPIX3']-1
     if round(cp, 0) == round(cp, 5):
         cp = int(cp)
     else:
@@ -185,21 +185,21 @@ def check_velo(hdu, ext=None):
             fu = u.Hz
         ch = (ch*fu).to(u.m, equivalencies=u.spectral())
         rf = (rf*fu).to(u.m, equivalencies=u.spectral())
-        ch = ((ch-rf)/rf*co.c).to(u.km/u.s)
+        ch = ((ch-rf)/rf*co.c).to(u.km/u.s).value
         h['CTYPE3'] = 'VRAD'
     else:
         try:
             ch = ch*u.Unit(h['CUNIT3'])
         except:
             ch = ch*u.m/u.s
-        ch = ch.to(u.km/u.s)
+        ch = ch.to(u.km/u.s).value
     if ch[1]-ch[0] < 0:
         ch = np.flip(ch, axis=0)
         hdu.data = np.flip(hdu.data, axis=0)
-        cp = h['NAXIS3']-cp+1
-    h['CRVAL3'] = ch[cp].value
-    h['CDELT3'] = (ch[cp]-ch[cp-1]).value
-    h['CRPIX3'] = cp
+        cp = h['NAXIS3']-cp-1
+    h['CRVAL3'] = ch[cp]
+    h['CDELT3'] = ch[cp]-ch[cp-1]
+    h['CRPIX3'] = cp+1
     h['CUNIT3'] = 'km/s'
     return fits.PrimaryHDU(hdu.data, h)
 
