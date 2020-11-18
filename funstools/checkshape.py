@@ -170,7 +170,9 @@ def check_velo(hdu, ext=None):
         raise TypeError('{} is not supported type.'.format(h['CTYPE3']))
     ch = (np.arange(h['NAXIS3'])+1.-h['CRPIX3'])*h['CDELT3']+h['CRVAL3']
     cp = h['CRPIX3']
-    if not round(cp, 0) == round(cp, 5):
+    if round(cp, 0) == round(cp, 5):
+        cp = int(cp)
+    else:
         cp = int(cp)
         h['CRPIX3'] = cp
         h['CRVAL3'] = ch[cp]
