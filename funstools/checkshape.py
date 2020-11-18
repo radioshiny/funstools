@@ -44,7 +44,7 @@ def get_fits(data, form, ext=None, verbose=False):
     Returns:
         hdulist, hdu, data, or header
     """
-    if not form in ['hdulist', 'hdu', 'data', 'header']:
+    if form not in ['hdulist', 'hdu', 'data', 'header']:
         raise TypeError("Possible forms: 'hdulist', 'hdu', 'data', or 'header'.")
     if form is 'data' and isinstance(data, np.ndarray):
         return data*1.
@@ -167,33 +167,37 @@ def check_velo(hdu, ext=None):
     hdu = get_fits(hdu, 'hdu', ext)
     h = hdu.header
     if not h['CTYPE3'] in ['VRAD', 'FREQ']:
-        raise TypeError('{} is not supported type.'.format(h['CYTPE3']))
+        raise TypeError('{} is not supported type.'.format(h['CTYPE3']))
     ch = (np.arange(h['NAXIS3'])+1.-h['CRPIX3'])*h['CDELT3']+h['CRVAL3']
+    cp = h['CRPIX3']
+    if not round(cp, 0) == round(cp, 5):
+        cp = int(cp)
+        h['CRPIX3'] = cp
+        h['CRVAL3'] = ch[cp]
+        ch = (np.arange(h['NAXIS3'])+1.-h['CRPIX3'])*h['CDELT3']+h['CRVAL3']
     if h['CTYPE3'] == 'FREQ':
-        try:
-            rf = h['RESTFREQ']
-        except:
-            rf = h['CRVAL3']
+        rf = h['CRVAL3']
         try:
             fu = u.Unit(h['CUNIT3'])
         except:
             fu = u.Hz
         ch = (ch*fu).to(u.m, equivalencies=u.spectral())
         rf = (rf*fu).to(u.m, equivalencies=u.spectral())
-        ch = ((ch-rf)/rf*co.c).to(u.km/u.s).round(3)
+        ch = ((ch-rf)/rf*co.c).to(u.km/u.s)
         h['CTYPE3'] = 'VRAD'
     else:
         try:
             ch = ch*u.Unit(h['CUNIT3'])
         except:
             ch = ch*u.m/u.s
-        ch = ch.to(u.km/u.s).round(5)
+        ch = ch.to(u.km/u.s)
     if ch[1]-ch[0] < 0:
         ch = np.flip(ch, axis=0)
         hdu.data = np.flip(hdu.data, axis=0)
-    h['CRVAL3'] = ch[0].value
-    h['CDELT3'] = round((ch[1]-ch[0]).value, 5)
-    h['CRPIX3'] = 1
+        cp = h['NAXIS3']-cp+1
+    h['CRVAL3'] = ch[cp]
+    h['CDELT3'] = ch[cp]-ch[cp-1]
+    h['CRPIX3'] = cp
     h['CUNIT3'] = 'km/s'
     return fits.PrimaryHDU(hdu.data, h)
 
