@@ -197,8 +197,8 @@ def check_velo(hdu, ext=None):
         ch = np.flip(ch, axis=0)
         hdu.data = np.flip(hdu.data, axis=0)
         cp = h['NAXIS3']-cp+1
-    h['CRVAL3'] = ch[cp]
-    h['CDELT3'] = ch[cp]-ch[cp-1]
+    h['CRVAL3'] = ch[cp].value
+    h['CDELT3'] = (ch[cp]-ch[cp-1]).value
     h['CRPIX3'] = cp
     h['CUNIT3'] = 'km/s'
     return fits.PrimaryHDU(hdu.data, h)
