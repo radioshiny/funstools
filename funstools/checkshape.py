@@ -191,6 +191,7 @@ def check_velo(hdu, ext=None):
         try:
             ch = ch*u.Unit(h['CUNIT3'])
         except:
+            warn("The unit of the channel value could not be found.")
             ch = ch*u.m/u.s
         ch = ch.to(u.km/u.s).value
     if ch[1]-ch[0] < 0:
@@ -198,7 +199,10 @@ def check_velo(hdu, ext=None):
         hdu.data = np.flip(hdu.data, axis=0)
         cp = h['NAXIS3']-cp-1
     h['CRVAL3'] = ch[cp]
-    h['CDELT3'] = ch[cp]-ch[cp-1]
+    if cp == 0:
+        h['CDELT3'] = ch[cp+1]-ch[cp]
+    else:
+        h['CDELT3'] = ch[cp]-ch[cp-1]
     h['CRPIX3'] = cp+1
     h['CUNIT3'] = 'km/s'
     return fits.PrimaryHDU(hdu.data, h)
