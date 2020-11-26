@@ -371,7 +371,7 @@ class Cube2map:
             m0rms = np.sqrt(nch)*mrms*self.cw
             print('\n[ Making Moment 0 (integrated intensity) map ]')
             print('Channel range      = {:d} ~ {:d}'.format(cr[0], cr[1]))
-            print('Velocity range     = {:.2f} ~ {:.2f}'.format(self._x[cr[0]], self._x[cr[1]]))
+            print('Velocity range     = {:.2f} ~ {:.2f}'.format(self.x[cr[0]], self.x[cr[1]]))
             print('N total channel    = {:d}'.format(cr[1]-cr[0]))
             print('N detected channel = {:d}'.format(nch))
             print('Smoothing          = {}'.format(self._smoothing))
