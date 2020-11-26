@@ -356,7 +356,7 @@ class Cube2map:
         if cr is None:
             cr = self.v2ch(vr)
         if cr[1] < 0:
-            cr[1] = np.arange(self._nx)[cr[1]]
+            cr = (cr[0], np.arange(self._nx)[cr[1]])
         if not (isinstance(cr, list) or isinstance(cr, tuple)):
             raise TypeError("'cr' (channel range) is not a list or tuple.")
         self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)*self.detmask
