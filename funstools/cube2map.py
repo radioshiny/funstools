@@ -52,6 +52,15 @@ class Cube2map:
             self._rmssize = int(self._nx/3)
         else:
             self._rmssize = rmssize
+        if self._getrms == 'both':
+            self._rmsch = np.arange(self._nx)[:self._rmssize]
+            self._rmsch = np.append(self._rmsch, np.arange(self._nx)[-self._rmssize:])
+        elif self._getrms == 'left':
+            self._rmsch = np.arange(self._nx)[:self._rmssize]
+        elif self._getrms == 'right':
+            self._rmsch = np.arange(self._nx)[-self._rmssize:]
+        else:
+            raise ValueError("'{}' is not recognized. Possible options: 'left', 'right', or 'both'.".format(self._getrms))
         self._maxrms = max_rms
         self._masking = masking
         self._smoothing = smoothing
@@ -346,19 +355,23 @@ class Cube2map:
         """
         if cr is None:
             cr = self.v2ch(vr)
+        if cr[1] < 0:
+            cr[1] = np.arange(self._nx)[cr[1]]
         if not (isinstance(cr, list) or isinstance(cr, tuple)):
             raise TypeError("'cr' (channel range) is not a list or tuple.")
         self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)*self.detmask
         if verbose:
-            dch = np.nansum(self.mask[cr[0]:cr[1]], axis=(1, 2))
-            nch = np.sum(dch > dch.max()*0.01)
+            dch = np.nansum(self.mask, axis=(1, 2))
+            rms_dch = np.nanmedian(dch[self._rmsch])
+            nch = np.sum(dch[cr[0]:cr[1]] > self._snr*rms_dch)
             if self._smoothing:
                 mrms = np.nanmedian(self.srms*self.detmask)
             else:
                 mrms = np.nanmedian(self.rms*self.detmask)
             m0rms = np.sqrt(nch)*mrms*self.cw
             print('\n[ Making Moment 0 (integrated intensity) map ]')
-            print('Channel range      = {:d} ~ {:d}'.format(cr[0], cr[1]-1))
+            print('Channel range      = {:d} ~ {:d}'.format(cr[0], cr[1]))
+            print('Velocity range     = {:.2f} ~ {:.2f}'.format(self._x[cr[0]], self._x[cr[1]]))
             print('N total channel    = {:d}'.format(cr[1]-cr[0]))
             print('N detected channel = {:d}'.format(nch))
             print('Smoothing          = {}'.format(self._smoothing))
