@@ -225,8 +225,8 @@ def make_velo(hdu, ext=None):
         h = hdu
     else:
         h = get_fits(hdu, 'header', ext)
-    if not h['CTYPE3'] == 'VRAD':
-        raise TypeError('{} is not supported type.'.format(h['CYTPE3']))
+    if not h['CTYPE3'] in ['VRAD', 'VELO-LSR']:
+        raise TypeError('{} is not supported type.'.format(h['CTYPE3']))
     ch = (np.arange(h['NAXIS3'])+1.-h['CRPIX3'])*h['CDELT3']+h['CRVAL3']
     try:
         ch = ch*u.Unit(h['CUNIT3'])
