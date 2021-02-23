@@ -330,7 +330,7 @@ class Cube2map:
         else:
             raise TypeError("'vr' (velocity range) is not a list or tuple.")
 
-    def moment0(self, vr=None, cr=None, verbose=False):
+    def moment0(self, vr=None, cr=None, masking=True, verbose=False):
         """
         Make moment 0 map for given velocity or channel range.
 
@@ -339,13 +339,16 @@ class Cube2map:
                 Velocity range [v1, v2]. Default is None.
             cr : list or tuple
                 Channel number range [c1, c2], Default is None.
-            verbose : bool
-                Return sigma of moment0, Default is False.
 
             If both 'vr' and 'cr' is None, 'vr' is set entire velocity range
                 except for the channel used to measure the RMS error.
             If both 'vr' and 'cr' are given, 'cr' is used first.
             If only one range is given without a key name, it is used as velocity.
+
+            masking : bool
+                Masking no detected pixels. Default is True.
+            verbose : bool
+                Return sigma of moment0. Default is False.
 
         Returns:
             moment0 : 2d-array (image)
@@ -359,7 +362,9 @@ class Cube2map:
             cr = (cr[0], np.arange(self._nx)[cr[1]])
         if not (isinstance(cr, list) or isinstance(cr, tuple)):
             raise TypeError("'cr' (channel range) is not a list or tuple.")
-        self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)*self.detmask
+        self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)
+        if masking:
+            self._m0 *= self.detmask
         if verbose:
             dch = np.nansum(self.mask, axis=(1, 2))
             rms_dch = np.nanmedian(dch[self._rmsch])
