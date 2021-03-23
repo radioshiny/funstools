@@ -258,8 +258,8 @@ class Decompose(Cube2map):
                 ig[:, 2] = 0.2/np.sqrt(8*np.log(2))
                 bmin[:, 2] = self._smin
                 bmax[:, 2] = self._smax
-                return curve_fit(self._gauss(cn), self.x, y, ig.flatten(), bounds=(bmin.flatten(), bmax.flatten()),
-                                 maxfev=1000*(3*cn+1))
+                return curve_fit(self._gauss(cn), self.x[self._rmssize:-self._rmssize], y[self._rmssize:-self._rmssize],
+                                 ig.flatten(), bounds=(bmin.flatten(), bmax.flatten()), maxfev=1000*(3*cn+1))
         else:
             refit = refit.reshape(-1, 3)
             cn = len(refit)
@@ -279,8 +279,8 @@ class Decompose(Cube2map):
             bmin[:, 2] = self._smin
             bmax[:, 2] = self._smax
             try:
-                return curve_fit(self._gauss(cn), self.x, y, ig.flatten(), bounds=(bmin.flatten(), bmax.flatten()),
-                             maxfev=1000*(3*cn+1))
+                return curve_fit(self._gauss(cn), self.x[self._rmssize:-self._rmssize], y[self._rmssize:-self._rmssize],
+                                 ig.flatten(), bounds=(bmin.flatten(), bmax.flatten()), maxfev=1000*(3*cn+1))
             except:
                 print(ig)
                 print(bmin)
@@ -447,7 +447,7 @@ class Decompose(Cube2map):
         pp = 0
         pi = 0
         ppp = np.nansum(self.det_comp)
-        print('\n[ Second fitting with initial guess ]')
+        print('\n[ Fitting with FoF result ]')
         print('Progress 0...|10..|20..|30..|40..|50..|60..|70..|80..|90..|100%')
         print('         ', end='')
         for d in range(self.nd):
