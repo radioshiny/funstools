@@ -455,6 +455,8 @@ class Decompose(Cube2map):
                 if not self.det_comp[d, r]:
                     continue
                 ct = fit[(fit['rp'] == r) & (fit['dp'] == d)]
+                if len(ct) == 0:
+                    continue
                 ig = []
                 for i in range(len(ct)):
                     for c in ['tp', 'vp', 'sd']:
