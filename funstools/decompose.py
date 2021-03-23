@@ -114,6 +114,7 @@ class Decompose(Cube2map):
     _fitres1 = None
     _fitres2 = None
     _fitres3 = None
+    _fitres_after_fof = None
 
     @property
     def data_for_finding(self):
@@ -286,6 +287,37 @@ class Decompose(Cube2map):
                 print(bmax)
                 raise ValueError("'p0'(initial guess) is out of 'bounds'.")
 
+    def _fitter_after_fof(self, y, rms, refit=None):
+        if refit is None:
+            raise IOError("'refit' or 'guess' are required.")
+        else:
+            refit = refit.reshape(-1, 3)
+            cn = len(refit)
+            ig = np.zeros((cn, 3))
+            bmin = np.zeros((cn, 3))
+            bmax = np.zeros((cn, 3))
+            iy = interp1d(self.x, y)
+            # amplitude
+            ig[:, 0] = refit[:, 0]
+            bmin[:, 0] = refit[:, 0]*0.9-rms
+            bmax[:, 0] = refit[:, 0]*1.1+rms
+            # mean
+            ig[:, 1] = refit[:, 1]
+            bmin[:, 1] = refit[:, 1]-self._mlim
+            bmax[:, 1] = refit[:, 1]+self._mlim
+            # stddev
+            ig[:, 2] = refit[:, 2]
+            bmin[:, 2] = np.max(np.array([refit[:, 2]*0.5, np.full(cn, self._smin)]), axis=0)
+            bmax[:, 2] = np.min(np.array([refit[:, 2]*2, np.full(cn, self._smax)]), axis=0)
+            try:
+                return curve_fit(self._gauss(cn), self.x[self._rmssize:-self._rmssize], y[self._rmssize:-self._rmssize],
+                                 ig.flatten(), bounds=(bmin.flatten(), bmax.flatten()), maxfev=1000*(3*cn+1))
+            except:
+                print(ig)
+                print(bmin)
+                print(bmax)
+                raise ValueError("'p0'(initial guess) is out of 'bounds'.")
+
     def initial_fit(self):
         fr = Table(names=('rp', 'dp', 'tn', 'cn', 'tp', 'vp', 'sd'),
                    dtype=('i4', 'i4', 'i4', 'i4', 'f8', 'f8', 'f8'))
@@ -408,6 +440,46 @@ class Decompose(Cube2map):
         if self._fitres3 is None:
             self._fitres3 = self.final_fit()
         return self._fitres3
+
+    def fit_after_fof(self, fit):
+        fr = Table(names=('rp', 'dp', 'tn', 'cn', 'tp', 'vp', 'sd'),
+                   dtype=('i4', 'i4', 'i4', 'i4', 'f8', 'f8', 'f8'))
+        pp = 0
+        pi = 0
+        ppp = np.nansum(self.det_comp)
+        print('\n[ Second fitting with initial guess ]')
+        print('Progress 0...|10..|20..|30..|40..|50..|60..|70..|80..|90..|100%')
+        print('         ', end='')
+        for d in range(self.nd):
+            for r in range(self.nr):
+                if not self.det_comp[d, r]:
+                    continue
+                ct = fit[(fit['rp'] == r) & (fit['dp'] == d)]
+                ig = []
+                for i in range(len(ct)):
+                    for c in ['tp', 'vp', 'sd']:
+                        ig.append(ct[c][i])
+                fp, fc = self._fitter(self.y[:, d, r], self.srms[d, r], refit=np.array(ig))
+                fp = fp.reshape((-1, 3))
+                for i in range(len(fp)):
+                    fr.add_row((r, d, len(fp), i, fp[i, 0], fp[i, 1], fp[i, 2]))
+                pp += 1
+                if int(pp/ppp*50) > pi:
+                    pi += 1
+                    print('#', end='')
+        fr['dv'] = fr['sd']*np.sqrt(8.*np.log(2))
+        fr['area'] = fr['tp']*np.sqrt(2.*np.pi*fr['sd']**2.)
+        self._fitres_after_fof = fr
+        print(' complete!')
+        return self._fitres_after_fof
+
+    @property
+    def fit_result_after_fof(self):
+        if self._fitres_after_fof is None:
+            print('Run Decompose.fit_after_fof() first.')
+            return
+        else:
+            return self._fitres_after_fof
 
     def run_decompose(self, save=None):
         """
