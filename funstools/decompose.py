@@ -299,16 +299,16 @@ class Decompose(Cube2map):
             iy = interp1d(self.x, y)
             # amplitude
             ig[:, 0] = refit[:, 0]
-            bmin[:, 0] = refit[:, 0]*0.9-rms
-            bmax[:, 0] = refit[:, 0]*1.1+rms
+            bmin[:, 0] = refit[:, 0]*0.8
+            bmax[:, 0] = refit[:, 0]*1.2
             # mean
             ig[:, 1] = refit[:, 1]
             bmin[:, 1] = refit[:, 1]-self._mlim
             bmax[:, 1] = refit[:, 1]+self._mlim
             # stddev
             ig[:, 2] = refit[:, 2]
-            bmin[:, 2] = np.max(np.array([refit[:, 2]*0.5, np.full(cn, self._smin)]), axis=0)
-            bmax[:, 2] = np.min(np.array([refit[:, 2]*2, np.full(cn, self._smax)]), axis=0)
+            bmin[:, 2] = np.max(np.array([refit[:, 2]*0.8, np.full(cn, self._smin)]), axis=0)
+            bmax[:, 2] = np.min(np.array([refit[:, 2]*1.2, np.full(cn, self._smax)]), axis=0)
             try:
                 return curve_fit(self._gauss(cn), self.x[self._rmssize:-self._rmssize], y[self._rmssize:-self._rmssize],
                                  ig.flatten(), bounds=(bmin.flatten(), bmax.flatten()), maxfev=1000*(3*cn+1))
