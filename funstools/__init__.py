@@ -14,6 +14,7 @@ from . import plots
 from . import smooth
 from . import userinput
 from . import decompose
+from . import parameter
 
 from .checkshape import *
 from .cube2map import *
@@ -22,3 +23,4 @@ from .plots import *
 from .smooth import *
 from .userinput import *
 from .decompose import *
+from .parameter import *
