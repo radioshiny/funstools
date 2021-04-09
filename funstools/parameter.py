@@ -33,7 +33,7 @@ def trao_aeff(line):
     b = 2.31232982
     c = 10.23642098
     w = wlen[line].to(u.mm).value
-    return (a*np.exp(-(b/w)**c)/100).round(3)
+    return ((a*np.exp(-(b/w)**c))/100).round(3)
 
 
 def trao_beff(line):
@@ -41,4 +41,4 @@ def trao_beff(line):
     b = 0.14793845
     c = -14.82565966
     f = freq[line].to(u.GHz).value
-    return (a-np.exp(b*f+c)/100).round(3)
+    return ((a-np.exp(b*f+c))/100).round(3)
