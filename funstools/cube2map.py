@@ -158,7 +158,10 @@ class Cube2map:
         if self._mask is None:
             # self._mask = get_mask(self._data, self._snr, self.rms, self._maxrms, self._velsmo, verbose=True)
             if self._smoothing:
-                maxrms = self._maxrms*np.nanmedian(self.srms)/np.nanmedian(self.rms)
+                if self._maxrms is None:
+                    maxrms = self._maxrms
+                else:
+                    maxrms = self._maxrms*np.nanmedian(self.srms)/np.nanmedian(self.rms)
                 self._mask = get_mask(self.sdata, self._snr, self.srms, maxrms, verbose=True)
             else:
                 self._mask = get_mask(self._data, self._snr, self.rms, self._maxrms, verbose=True)

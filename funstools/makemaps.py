@@ -89,9 +89,11 @@ def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, verbo
             if not temp[0].shape == rms.shape:
                 raise TypeError('Input RMS does not match the shape of input data.')
     snr = float(snr)
-    if max_rms is None:
-        max_rms = np.nanmedian(rms)*snr*2.
-    else:
+    # if max_rms is None:
+    #     max_rms = np.nanmedian(rms)*snr*2.
+    # else:
+    #     max_rms = float(max_rms)
+    if max_rms is not None:
         max_rms = float(max_rms)
     mask = np.zeros_like(temp)
     # smodata = smooth1d(temp, velocity_smo)
@@ -103,10 +105,11 @@ def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, verbo
                 empty += 1
                 mask[:, d, r] = np.nan
                 continue
-            if rms[d, r] > max_rms:
-                noisy += 1
-                mask[:, d, r] = np.nan
-                continue
+            if max_rms is not None:
+                if rms[d, r] > max_rms:
+                    noisy += 1
+                    mask[:, d, r] = np.nan
+                    continue
             # y = smodata[:, d, r]
             y = temp[:, d, r]
             pc = np.where(y > 0.)[0]
