@@ -156,7 +156,12 @@ class Cube2map:
             3d-array (cube) filled with 0. or 1.
         """
         if self._mask is None:
-            self._mask = get_mask(self._data, self._snr, self.rms, self._maxrms, self._velsmo, verbose=True)
+            # self._mask = get_mask(self._data, self._snr, self.rms, self._maxrms, self._velsmo, verbose=True)
+            if self._smoothing:
+                maxrms = self._maxrms*np.nanmedian(self.srms)/np.nanmedian(self.rms)
+                self._mask = get_mask(self.sdata, self._snr, self.srms, maxrms, verbose=True)
+            else:
+                self._mask = get_mask(self._data, self._snr, self.rms, self._maxrms, verbose=True)
         return self._mask
 
     @property
@@ -214,7 +219,7 @@ class Cube2map:
         Data cube with masking and smoothing.
         """
         if self._smdata is None:
-            self._smdata = smooth3d(self.mdata, self._spasmo, self._velsmo)
+            self._smdata = self.mask*self.sdata
         return self._smdata
 
     @property
@@ -235,7 +240,10 @@ class Cube2map:
                 else:
                     self._y = self.sdata
             else:
-                self._y = self.mdata
+                if self._masking:
+                    self._y = self.mdata
+                else:
+                    self._y = self._data
         return self._y
 
     @property

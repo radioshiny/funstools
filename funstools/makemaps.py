@@ -46,7 +46,8 @@ def get_rms(data, where='both', size=None, ext=None):
         raise ValueError("'{}' is not recognized. Possible options: 'left', 'right', or 'both'.".format(where))
 
 
-def get_mask(data, snr=3., rms=None, max_rms=None, velocity_smo=1, ext=None, ext_rms=None, verbose=True):
+# def get_mask(data, snr=3., rms=None, max_rms=None, velocity_smo=1, ext=None, ext_rms=None, verbose=True):
+def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, verbose=True):
     """
     Check the detection of emission lines for each channel in the cube data
     and return a mask that makes the undetected channels zero.
@@ -62,8 +63,8 @@ def get_mask(data, snr=3., rms=None, max_rms=None, velocity_smo=1, ext=None, ext
         max_rms : float
             Maximum limit of rms. Pixels with worse rms are excluded.
             Default is '2 x snr x median(rms)'
-        velocity_smo : float
-            Channel smoothing size for detection.
+        # velocity_smo : float
+        #     Channel smoothing size for detection.
         ext : int, optional
             Extension number when input FITS is multiple HDUList.
         ext_rms : int, optional
@@ -93,7 +94,8 @@ def get_mask(data, snr=3., rms=None, max_rms=None, velocity_smo=1, ext=None, ext
     else:
         max_rms = float(max_rms)
     mask = np.zeros_like(temp)
-    smodata = smooth1d(temp, velocity_smo)
+    # smodata = smooth1d(temp, velocity_smo)
+    # remove smoothing in make_mask, just use input data
     empty, noisy = 0, 0
     for d in range(rms.shape[0]):
         for r in range(rms.shape[1]):
@@ -105,14 +107,15 @@ def get_mask(data, snr=3., rms=None, max_rms=None, velocity_smo=1, ext=None, ext
                 noisy += 1
                 mask[:, d, r] = np.nan
                 continue
-            y = smodata[:, d, r]
+            # y = smodata[:, d, r]
+            y = temp[:, d, r]
             pc = np.where(y > 0.)[0]
             for k, g in groupby(enumerate(pc), lambda x: x[0]-x[1]):
                 g = list(map(itemgetter(1), g))
                 if len(g) > 3 and any(y[g] > snr*rms[d, r]):
                     mask[g, d, r] = 1.
     det = np.nansum(mask, axis=0) > 4.
-    mask[:, ~det] = np.nan
+    # mask[:, ~det] = np.nan
     if verbose:
         print('\n[ Masking noise channels ]')
         print('Total pixels        = {:d}'.format(np.prod(rms.shape)))

@@ -3,6 +3,8 @@ from astropy.convolution.kernels import Gaussian1DKernel, Gaussian2DKernel, Toph
 from astropy import units as u
 import numpy as np
 
+_f2s = np.sqrt(8.*np.log(2.))
+
 
 def smooth1d(data, fwhm):
     """
@@ -19,7 +21,7 @@ def smooth1d(data, fwhm):
     """
     if float(fwhm) == 0.:
         return data
-    kernel = Gaussian1DKernel(fwhm/np.sqrt(8.*np.log(2.)))
+    kernel = Gaussian1DKernel(fwhm/_f2s)
     kl = len(kernel.array)
     data = np.r_[data[kl-1:0:-1], data, data[-2:-kl-1:-1]]
     if len(data.shape) == 1:
@@ -53,13 +55,13 @@ def smooth2d(data, fwhm, pa=None):
     if float(fwhm) == 0.:
         return data
     if isinstance(fwhm, int) or isinstance(fwhm, float):
-        kernel = Gaussian2DKernel(fwhm/np.sqrt(8.*np.log(2.)))
+        kernel = Gaussian2DKernel(fwhm/_f2s)
     elif len(fwhm) == 2:
         if pa is None:
-            kernel = Gaussian2DKernel(fwhm[0]/np.sqrt(8.*np.log(2.)), fwhm[1]/np.sqrt(8.*np.log(2.)))
+            kernel = Gaussian2DKernel(fwhm[0]/_f2s, fwhm[1]/_f2s)
         else:
             theta = pa*u.deg.to(u.rad)
-            kernel = Gaussian2DKernel(fwhm[0]/np.sqrt(8.*np.log(2.)), fwhm[1]/np.sqrt(8.*np.log(2.)), theta)
+            kernel = Gaussian2DKernel(fwhm[0]/_f2s, fwhm[1]/_f2s, theta)
     else:
         raise ValueError('2D-smoothing size: float (fwhm) or tuple (x_fwhm, y_fwhm)')
     if len(data.shape) == 1:
