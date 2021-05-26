@@ -117,8 +117,11 @@ def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, verbo
                 g = list(map(itemgetter(1), g))
                 if len(g) > 3 and any(y[g] > snr*rms[d, r]):
                     mask[g, d, r] = 1.
+    obs = np.isfinite(temp[0])
     det = np.nansum(mask, axis=0) > 4.
     # mask[:, ~det] = np.nan
+    # the value of observed but not detected pixel: np.nan or zero
+    mask[:, np.logical_and(obs, ~det)] = 0.
     if verbose:
         print('\n[ Masking noise channels ]')
         print('Total pixels        = {:d}'.format(np.prod(rms.shape)))
