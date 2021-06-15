@@ -11,6 +11,9 @@ from scipy.optimize import curve_fit
 from scipy.interpolate import interp1d
 
 
+_f2s = np.sqrt(8.*np.log(2.))
+
+
 def predict_peaks(data, rms):
     if not isinstance(data, np.ndarray):
         raise TypeError("'data' should be given as numpy.ndarray.")
@@ -102,8 +105,8 @@ class Decompose(Cube2map):
         self._velsmo_find = float(velsmo_find)
         self._spasmo_find = float(spasmo_find)
         self._mlim = float(mlim)
-        self._smin = float(wmin)/np.sqrt(8*np.log(2))
-        self._smax = float(wmax)/np.sqrt(8*np.log(2))
+        self._smin = float(wmin)/_f2s
+        self._smax = float(wmax)/_f2s
 
     _datafc = None
     _mdatafc = None
@@ -255,7 +258,7 @@ class Decompose(Cube2map):
                 bmin[:, 1] = self.x[guess]-self._mlim
                 bmax[:, 1] = self.x[guess]+self._mlim
                 # stddev
-                ig[:, 2] = 0.2/np.sqrt(8*np.log(2))
+                ig[:, 2] = 0.2/_f2s
                 bmin[:, 2] = self._smin
                 bmax[:, 2] = self._smax
                 return curve_fit(self._gauss(cn), self.x[self._rmssize:-self._rmssize], y[self._rmssize:-self._rmssize],

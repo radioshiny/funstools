@@ -47,7 +47,7 @@ def get_rms(data, where='both', size=None, ext=None):
 
 
 # def get_mask(data, snr=3., rms=None, max_rms=None, velocity_smo=1, ext=None, ext_rms=None, verbose=True):
-def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, verbose=True):
+def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, verbose=True, debug=False):
     """
     Check the detection of emission lines for each channel in the cube data
     and return a mask that makes the undetected channels zero.
@@ -118,7 +118,15 @@ def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, verbo
                 if len(g) > 3 and any(y[g] > snr*rms[d, r]):
                     mask[g, d, r] = 1.
     obs = np.isfinite(temp[0])
-    det = np.nansum(mask, axis=0) > 4.
+    det = np.nansum(mask, axis=0)
+    if debug:
+        print('\n===== [ DEBUG - START ] =====')
+        np.save('debug_get_mask_det.temp', det)
+        for nch in range(4, 21):
+            print('{:02d} = {}'.format(nch, np.sum(det == nch)))
+        print('===== [ DEBUG - END ] =====\n')
+    det[det < 4] = np.nan
+    det = det > np.nanpercentile(det, 1)
     # mask[:, ~det] = np.nan
     # the value of observed but not detected pixel: np.nan or zero
     mask[:, np.logical_and(obs, ~det)] = 0.
@@ -146,7 +154,10 @@ def get_det(mask):
     Returns:
         ndarray (image, boolean type)
     """
-    return np.nansum(mask, axis=0) > 4.
+    det = np.nansum(mask, axis=0)
+    det[det < 4] = np.nan
+    det = det > np.nanpercentile(det, 1)
+    return det
 
 
 def save_fits(file, data, header=None, overwrite=None):

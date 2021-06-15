@@ -162,7 +162,7 @@ class Cube2map:
                     maxrms = self._maxrms
                 else:
                     maxrms = self._maxrms*np.nanmedian(self.srms)/np.nanmedian(self.rms)
-                self._mask = get_mask(self.sdata, self._snr, self.srms, maxrms, verbose=True)
+                self._mask = get_mask(self.sdata, self._snr, self.srms, maxrms, verbose=True, debug=True)
             else:
                 self._mask = get_mask(self._data, self._snr, self.rms, self._maxrms, verbose=True)
         return self._mask
@@ -376,6 +376,7 @@ class Cube2map:
         self._m0 = np.sum(self.y[cr[0]:cr[1]]*self.cw, axis=0)
         if masking:
             self._m0 *= self.detmask
+            self._m0[self._m0 == 0.] = np.nan
         if verbose:
             dch = np.nansum(self.mask, axis=(1, 2))
             rms_dch = np.nanmedian(dch[self._rmsch])
