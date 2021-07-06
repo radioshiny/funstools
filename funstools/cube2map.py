@@ -13,7 +13,7 @@ class Cube2map:
     """
 
     def __init__(self, cube=None, ext=None, getrms='both', rmssize=None, max_rms=None,
-                 snr=3., velocity_smo=1, spatial_smo=1, masking=True, smoothing=True):
+                 snr=3., velocity_smo=1, spatial_smo=1, masking=True, smoothing=True, debug=False):
         """
         Construct a 'Cube2map' object.
 
@@ -67,6 +67,7 @@ class Cube2map:
         self._snr = float(snr)
         self._velsmo = float(velocity_smo)
         self._spasmo = float(spatial_smo)
+        self._debug = debug
 
 
     _rms = None
@@ -162,9 +163,9 @@ class Cube2map:
                     maxrms = self._maxrms
                 else:
                     maxrms = self._maxrms*np.nanmedian(self.srms)/np.nanmedian(self.rms)
-                self._mask = get_mask(self.sdata, self._snr, self.srms, maxrms, verbose=True, debug=True)
+                self._mask = get_mask(self.sdata, self._snr, self.srms, maxrms, None, self._getrms, self._rmssize, verbose=True, debug=self._debug)
             else:
-                self._mask = get_mask(self._data, self._snr, self.rms, self._maxrms, verbose=True)
+                self._mask = get_mask(self._data, self._snr, self.rms, self._maxrms, None, self._getrms, self._rmssize, verbose=True, debug=self._debug)
         return self._mask
 
     @property

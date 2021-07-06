@@ -47,7 +47,7 @@ def get_rms(data, where='both', size=None, ext=None):
 
 
 # def get_mask(data, snr=3., rms=None, max_rms=None, velocity_smo=1, ext=None, ext_rms=None, verbose=True):
-def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, verbose=True, debug=False):
+def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, getrms='both', rmssize=None, verbose=True, debug=False):
     """
     Check the detection of emission lines for each channel in the cube data
     and return a mask that makes the undetected channels zero.
@@ -79,8 +79,11 @@ def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, verbo
     if len(temp.shape) is not 3:
         raise TypeError('Input data is not 3D-cube.')
     if rms is None:
-        warn('No RMS data. RMS is estimated from the left and right 1/3 channels.')
-        rms = get_rms(temp)
+        if rmssize is None:
+            warn('No RMS data. RMS is estimated from the left and right 1/3 channels.')
+            rms = get_rms(temp)
+        else:
+            rms = get_rms(temp, where=getrms, size=rmssize)
     else:
         if isinstance(rms, float):
             rms = np.full(temp.shape, 1.)*rms
@@ -118,28 +121,59 @@ def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, verbo
                 if len(g) > 3 and any(y[g] > snr*rms[d, r]):
                     mask[g, d, r] = 1.
     obs = np.isfinite(temp[0])
-    det = np.nansum(mask, axis=0)
+
+    npx = np.nansum(mask, axis=(1, 2))
+    if rmssize is None:
+        size = int(len(temp)/3)
+        medch = np.mean(np.append(npx[:size], npx[-size:]))
+        stdch = np.std(np.append(npx[:size], npx[-size:]))
+    else:
+        medch = np.mean(np.append(npx[:rmssize], npx[-rmssize:]))
+        stdch = np.std(np.append(npx[:rmssize], npx[-rmssize:]))
+    detch = npx-medch > stdch*snr
+    mask[~detch] = 0.
+    mask[:, ~obs] = np.nan
+
+    nch = np.nansum(mask, axis=0)
+    mask[:, nch < 4] = 0.
+
+    nch = np.nansum(mask, axis=0)
+    sumpx = np.nansum(temp*mask, axis=0)
+    rmspx = rms*np.sqrt(nch)
+    detpx = sumpx > rmspx*snr
+    mask[:, ~detpx] = 0.
+    mask[:, ~obs] = np.nan
+
     if debug:
         print('\n===== [ DEBUG - START ] =====')
-        np.save('debug_get_mask_det.temp', det)
-        for nch in range(4, 21):
-            print('{:02d} = {}'.format(nch, np.sum(det == nch)))
+        # np.save('debug_get_mask_nch.temp', nch)
+        _nodet = sumpx < rmspx*snr
+        print('tot / det / no_det = {} / {} / {}'.format(np.sum(np.isfinite(sumpx)), np.sum(detpx), np.sum(_nodet)))
+        # print('minimum_nch_det = {}'.format(min_nch_det))
+        # _check = np.logical_and(det, nch < 4)
+        # print('maximum_nch_no_det = {}'.format(max_nch_nod))
+        from matplotlib import pyplot as plt
+        _fig, _ax = plt.subplots(1, 3)
+        _ax[0].hist(nch.flatten(), bins=np.arange(1, np.nanmax(nch)+1))
+        # _ax[0].axvline(min_nch_det, color='red')
+        _ax[1].imshow(sumpx/rmspx, origin='lower', interpolation='nearest')
+        # _ax[2].imshow(_check, origin='lower', interpolation='nearest')
+        _ax[2].step(np.arange(len(npx)), npx, where='mid')
+        _ax[2].axhline(medch+stdch*snr, color='red')
+        _ax[2].scatter(np.arange(len(npx))[detch], npx[detch], c='black')
         print('===== [ DEBUG - END ] =====\n')
-    det[det < 4] = np.nan
-    det = det > np.nanpercentile(det, 1)
-    # mask[:, ~det] = np.nan
-    # the value of observed but not detected pixel: np.nan or zero
-    mask[:, np.logical_and(obs, ~det)] = 0.
+
     if verbose:
         print('\n[ Masking noise channels ]')
         print('Total pixels        = {:d}'.format(np.prod(rms.shape)))
         print('Empty pixels        = {:d} ; NaN pixel'.format(empty))
         print('Noise pixels        = {:d} ; > max_rms limit'.format(noisy))
-        print('Undetected pixels   = {:d} ; < s/n ratio cut'.format(np.prod(rms.shape)-empty-noisy-det.sum()))
-        print('Available pixels    = {:d}'.format(det.sum()))
+        print('Undetected pixels   = {:d} ; < s/n ratio cut'.format(np.prod(rms.shape)-empty-noisy-detpx.sum()))
+        print('Available pixels    = {:d}'.format(detpx.sum()))
         tc, dc = np.nansum(temp*0.+1.), np.nansum(mask)
         print('-----\nMasked channels     = {:d}'.format(int(tc-dc)))
         print('Detectable channels = {:d} / {:d} ( {:.1f} % )'.format(int(dc), int(tc), dc/tc*100.))
+
     return mask
 
 
@@ -155,9 +189,9 @@ def get_det(mask):
         ndarray (image, boolean type)
     """
     det = np.nansum(mask, axis=0)
-    det[det < 4] = np.nan
-    det = det > np.nanpercentile(det, 1)
-    return det
+    # det[det < 4] = np.nan
+    # det = det > np.nanpercentile(det, 1)
+    return det > 3
 
 
 def save_fits(file, data, header=None, overwrite=None):

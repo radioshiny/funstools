@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="funstools",  # Replace with your own username
-    version="0.3.3",
+    version="0.3.4",
     author="Shinyoung Kim",
     author_email="radioshiny@gmail.com",
     description="FUNStools is python toolkit for FUNS project",
