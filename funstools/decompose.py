@@ -9,6 +9,7 @@ from astropy.io.ascii import write
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.interpolate import interp1d
+from matplotlib.colors import TABLEAU_COLORS as tabcolor
 
 
 _f2s = np.sqrt(8.*np.log(2.))
@@ -154,7 +155,11 @@ class Decompose(Cube2map):
         """
         if self._comps is None:
             self._comps, self._nc = find_comps(self.mdata_for_finding, self.rms_for_finding,
-                                               self.det, self._spasmo_find, self._velsmo_find)
+                                              self.det, self._spasmo_find, self._velsmo_find)
+
+            # 28nov21 - rms_for_finding is too small value for finding. roll back.
+            # self._comps, self._nc = find_comps(self.mdata_for_finding, self.srms,
+            #                                    self.det, self._spasmo_find, self._velsmo_find)
         return self._comps
 
     @property
@@ -166,6 +171,10 @@ class Decompose(Cube2map):
         if self._nc is None:
             self._comps, self._nc = find_comps(self.mdata_for_finding, self.rms_for_finding,
                                               self.det, self._spasmo_find, self._velsmo_find)
+
+            # 28nov21 - rms_for_finding is too small value for finding. roll back.
+            # self._comps, self._nc = find_comps(self.mdata_for_finding, self.srms,
+            #                                    self.det, self._spasmo_find, self._velsmo_find)
         return self._nc
 
     @property
@@ -302,16 +311,16 @@ class Decompose(Cube2map):
             iy = interp1d(self.x, y)
             # amplitude
             ig[:, 0] = refit[:, 0]
-            bmin[:, 0] = refit[:, 0]*0.8
-            bmax[:, 0] = refit[:, 0]*1.2
+            bmin[:, 0] = refit[:, 0]*0.5
+            bmax[:, 0] = refit[:, 0]*1.5
             # mean
             ig[:, 1] = refit[:, 1]
             bmin[:, 1] = refit[:, 1]-self._mlim
             bmax[:, 1] = refit[:, 1]+self._mlim
             # stddev
             ig[:, 2] = refit[:, 2]
-            bmin[:, 2] = np.max(np.array([refit[:, 2]*0.8, np.full(cn, self._smin)]), axis=0)
-            bmax[:, 2] = np.min(np.array([refit[:, 2]*1.2, np.full(cn, self._smax)]), axis=0)
+            bmin[:, 2] = np.max(np.array([refit[:, 2]*0.5, np.full(cn, self._smin)]), axis=0)
+            bmax[:, 2] = np.min(np.array([refit[:, 2]*1.5, np.full(cn, self._smax)]), axis=0)
             try:
                 return curve_fit(self._gauss(cn), self.x[self._rmssize:-self._rmssize], y[self._rmssize:-self._rmssize],
                                  ig.flatten(), bounds=(bmin.flatten(), bmax.flatten()), maxfev=1000*(3*cn+1))
@@ -464,6 +473,7 @@ class Decompose(Cube2map):
                 for i in range(len(ct)):
                     for c in ['tp', 'vp', 'sd']:
                         ig.append(ct[c][i])
+                # fp, fc = self._fitter_after_fof(self.y[:, d, r], self.srms[d, r], refit=np.array(ig))
                 fp, fc = self._fitter(self.y[:, d, r], self.srms[d, r], refit=np.array(ig))
                 fp = fp.reshape((-1, 3))
                 for i in range(len(fp)):
@@ -658,6 +668,161 @@ class Decompose(Cube2map):
                         for c in range(len(ct)):
                             ax.plot(x, cm[c](x), color='green', lw=1, alpha=0.5)
                     ax.plot(x, cm(x), color='red', lw=2)
+
+            lbc.set_xlabel(r'$V_\mathrm{LSR}$ [km/s]')
+            lcl.set_ylabel(r'$T_\mathrm{A}^* [K]$')
+            c = self.wcs2d.pixel_to_world(r, d)
+            c = c.to_string('hmsdms').split(' ')
+            lslin.annotate('R.A.: {} ({})'.format(r, c[0]), (0.03, 0.92), xycoords='axes fraction')
+            lslin.annotate('Dec.: {} ({})'.format(d, c[1]), (0.03, 0.86), xycoords='axes fraction')
+            lslin.figure.canvas.draw()
+
+        lsfig.canvas.mpl_connect('button_press_event', _onclick)
+        return lsfig, lsmap, lslin
+
+    def plot_fof(self, fit, vr=None, yr=None):
+        """
+        Interactive scan for fitting results.
+        Plot fitting results over line profile on click position.
+
+        Parameters:
+            fit : astropy.table.Table
+                Result table of decomposing.
+                    Decompose.initial_fit_result
+                    Decompose.second_fit_result
+                    Decompose.final_fit_result
+                    Decompose.decompose_result
+            vr : list or tuple, optional
+                Range of velocity axis for line plot.
+            yr : list or tuple, optional
+                Range of temperature axis for line plot.
+
+        Returns:
+            tuple (plt.figure, plt.subplot, plt.subplot)
+        """
+        plt.ion()
+        plt.rcParams['xtick.direction'] = 'in'
+        plt.rcParams['ytick.direction'] = 'in'
+        x = self.x
+        if not isinstance(fit, Table):
+            raise TypeError("'fit' is not astropy Table.".format(fit))
+        if vr is None:
+            vr = [x[self._rmssize], x[-self._rmssize]]
+        elif isinstance(vr, list) or isinstance(vr, tuple):
+            pass
+        else:
+            raise TypeError("'vr' is not list or tuple.".format(vr))
+        if yr is None:
+            yr = [-4*np.nanmedian(self.rms), np.nanmax(self.data)+np.nanmedian(self.rms)]
+        elif isinstance(yr, list) or isinstance(yr, tuple):
+            pass
+        else:
+            raise TypeError("'yr' is not list or tuple".format(yr))
+        # make color list
+        fnum = np.unique(fit['afn'][fit['afn'] > 0], return_counts=False)
+        nfil = len(fnum)
+        if nfil != fnum.max():
+            raise ValueError('Assigned filament number is unsorted. There is un-assigned number.')
+        tabcolors = list(tabcolor)
+        clist = ['none']
+        for i in fnum:
+            clist.append(tabcolors[(i-1)%10])
+        # make map
+        det = np.full(self.data.shape, 0.)
+        det[np.nan_to_num(self.data) > 3*np.nanmedian(self.rms)] = 1.
+        dsum = np.nansum(det, axis=(1, 2))
+        imap = np.sum(self.data[dsum > 2*np.mean(dsum)], axis=0)
+        # map drawing
+        lsfig = plt.figure(figsize=(16, 9))
+        lsmap = lsfig.add_axes([0.06, 0.07, 0.36, 0.9], projection=self.wcs2d)
+        lsmap.set_xlabel('R.A.')
+        lsmap.set_ylabel('Dec.')
+        lsmap.imshow(imap, origin='lower', vmin=0, cmap='Greys', alpha=0.5)
+        for ifn in fnum:
+            icomps = fit[fit['afn'] == ifn]
+            lsmap.scatter(icomps['rp'], icomps['dp'], c=clist[ifn], s=10, alpha=0.5, edgecolors='None')
+        self._pp = lsmap.scatter(-100, -100, s=60, color='lime')
+        lsmap.set_xlim(-0.5, self.nr-0.5)
+        lsmap.set_ylim(-0.5, self.nd-0.5)
+        # line plot
+        lbl = lsfig.add_axes([0.47, 0.07, 0.17, 0.3])
+        lcl = lsfig.add_axes([0.47, 0.37, 0.17, 0.3])
+        ltl = lsfig.add_axes([0.47, 0.67, 0.17, 0.3])
+        lbc = lsfig.add_axes([0.64, 0.07, 0.17, 0.3])
+        lslin = lsfig.add_axes([0.64, 0.37, 0.17, 0.3])
+        ltc = lsfig.add_axes([0.64, 0.67, 0.17, 0.3])
+        lbr = lsfig.add_axes([0.81, 0.07, 0.17, 0.3])
+        lcr = lsfig.add_axes([0.81, 0.37, 0.17, 0.3])
+        ltr = lsfig.add_axes([0.81, 0.67, 0.17, 0.3])
+
+        def _onclick(event):
+            if event.inaxes == lsmap.axes:
+                self._pr = int(round(event.xdata))
+                self._pd = int(round(event.ydata))
+            elif event.inaxes == lbl.axes:
+                self._pr -= 1
+                self._pd -= 1
+            elif event.inaxes == lcl.axes:
+                self._pr -= 1
+            elif event.inaxes == ltl.axes:
+                self._pr -= 1
+                self._pd += 1
+            elif event.inaxes == lbc.axes:
+                self._pd -= 1
+            elif event.inaxes == ltc.axes:
+                self._pd += 1
+            elif event.inaxes == lbr.axes:
+                self._pr += 1
+                self._pd -= 1
+            elif event.inaxes == lcr.axes:
+                self._pr += 1
+            elif event.inaxes == ltr.axes:
+                self._pr += 1
+                self._pd += 1
+            else:
+                return
+            r = self._pr
+            d = self._pd
+            ri = [-1, -1, -1, 0, 0, 0, +1, +1, +1]
+            di = [-1, 0, +1, -1, 0, +1, -1, 0, +1]
+            for i, ax in enumerate([lbl, lcl, ltl, lbc, lslin, ltc, lbr, lcr, ltr]):
+                ax.clear()
+                ax.set_xlim(*vr)
+                ax.set_ylim(*yr)
+                if not i in [0, 1, 2]:
+                    ax.set_yticklabels([])
+                if not i in [0, 3, 6]:
+                    ax.set_xticklabels([])
+                rr = r+ri[i]
+                dd = d+di[i]
+                self._pp.set_offsets([rr-1, dd-1])
+                if 0 <= rr < self.nr and 0 <= dd < self.nd:
+                    srms = self._snr*self.rms_for_finding[dd, rr]
+                    rms = self._snr*self.srms[dd, rr]
+                    ax.plot([x[0], x[-1]], [0, 0], lw=1, alpha=0.5, color='black')
+                    ax.plot([x[0], x[-1]], [srms, srms], ls='dotted', lw=1, alpha=0.3, color='blue')
+                    ax.plot([x[0], x[-1]], [rms, rms], ls='dotted', lw=1, alpha=0.5, color='red')
+                    ax.step(x, self.mdata_for_finding[:, dd, rr], color='blue', lw=1, alpha=0.6)
+                    ax.step(x, self.sdata[:, dd, rr], color='black', lw=1)
+                    ct = fit[(fit['rp'] == rr) & (fit['dp'] == dd)]
+                    if len(ct) == 0:
+                        continue
+                    cp = self._px(dd, rr)
+                    for c in cp:
+                        xx = [x[c], x[c]]
+                        yy = [yr[0]/2, 0]
+                        ax.plot(xx, yy, color='red', lw=1, alpha=0.5)
+                    cm = Gaussian1D(ct['tp'][0], ct['vp'][0], ct['sd'][0])
+                    for c in range(1, len(ct)):
+                        cm += Gaussian1D(ct['tp'][c], ct['vp'][c], ct['sd'][c])
+                    ax.plot(x, cm(x), color='red', lw=4, alpha=0.3)
+                    for c in range(len(ct)):
+                        ci = Gaussian1D(ct['tp'][c], ct['vp'][c], ct['sd'][c])
+                        if ct['afn'][c] > 0:
+                            ax.fill_between(x, x*0., ci(x), color=clist[ct['afn'][c]], alpha=0.3)
+                            ax.plot(x, ci(x), color=clist[ct['afn'][c]], lw=1.5, alpha=0.7)
+                        else:
+                            ax.plot(x, ci(x), color='red', lw=1.5, ls='dotted')
 
             lbc.set_xlabel(r'$V_\mathrm{LSR}$ [km/s]')
             lcl.set_ylabel(r'$T_\mathrm{A}^* [K]$')

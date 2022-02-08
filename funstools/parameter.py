@@ -1,8 +1,9 @@
 import numpy as np
 from astropy import units as u
+from scipy.interpolate import splev
 
 
-_freq = {'13CO': 110.2015430*u.GHz,
+_freq = {'13CO': 110.2013543*u.GHz,
          'C18O': 109.7821734*u.GHz,
          'N2HP': 93.1737637*u.GHz,
          'HCOP': 89.1885247*u.GHz,
@@ -45,11 +46,21 @@ def trao_aeff(line):
 
 
 def trao_beff(line):
-    a = 52.40088923
-    b = 0.14793845
-    c = -14.82565966
+    tck = [np.array([0., 0., 0., 0., 1., 1., 1., 1.]),
+           [np.array([86.243, 95.56386886, 109.40870976, 115.271]),
+            np.array([48.7, 50.01438086, 51.82171106, 42.05])], 3]
+    _bf, _be = splev(np.linspace(-0.1, 1.1, 501), tck)
     f = _freq[line].to(u.GHz).value
-    return ((a-np.exp(b*f+c))/100).round(3)
+    _index = np.argmin((_bf-f)**2)
+    return _be[_index]
+
+
+def plot_beff():
+    tck = [np.array([0., 0., 0., 0., 1., 1., 1., 1.]),
+           [np.array([86.243, 95.56386886, 109.40870976, 115.271]),
+            np.array([48.7, 50.01438086, 51.82171106, 42.05])], 3]
+    _bf, _be = splev(np.linspace(-0.1, 1.1, 501), tck)
+    return _bf, _be
 
 
 def hgbs_beam(wl):

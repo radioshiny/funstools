@@ -80,6 +80,7 @@ class Cube2map:
     _x = None
     _y = None
     _m0 = None
+    _m0rms = None
     _m1 = None
     _m2 = None
     _wcs2d = None
@@ -260,8 +261,21 @@ class Cube2map:
         excluding the channel used to measure the rms error.
         """
         if self._m0 is None:
-            self._m0 = self.moment0(cr=(self._rmssize, -self._rmssize), verbose=False)
+            self._m0, self._m0rms = self.moment0(cr=(self._rmssize, -self._rmssize), verbose=True)
         return self._m0
+
+    @property
+    def m0rms(self):
+        """
+        Return the result of the most recently computed moment0 method.
+
+        If there is no pre-computed moment 0 map,
+        return the result of the moment0 method using the entire velocity range,
+        excluding the channel used to measure the rms error.
+        """
+        if self._m0rms is None:
+            self._m0, self._m0rms = self.moment0(cr=(self._rmssize, -self._rmssize), verbose=True)
+        return self._m0rms
 
     @property
     def m1(self):
@@ -386,7 +400,7 @@ class Cube2map:
                 mrms = np.nanmedian(self.srms*self.detmask)
             else:
                 mrms = np.nanmedian(self.rms*self.detmask)
-            m0rms = np.sqrt(nch)*mrms*self.cw
+            self._m0rms = np.sqrt(nch)*mrms*self.cw
             print('\n[ Making Moment 0 (integrated intensity) map ]')
             print('Channel range      = {:d} ~ {:d}'.format(cr[0], cr[1]))
             print('Velocity range     = {:.2f} ~ {:.2f}'.format(self.x[cr[0]], self.x[cr[1]]))
@@ -394,8 +408,8 @@ class Cube2map:
             print('N detected channel = {:d}'.format(nch))
             print('Smoothing          = {}'.format(self._smoothing))
             print('Median RMS_line    = {:.3f} K'.format(mrms))
-            print('-----\nRMS_moment0        = {:.3f} K km/s'.format(m0rms))
-            return self._m0, m0rms
+            print('-----\nRMS_moment0        = {:.3f} K km/s'.format(self._m0rms))
+            return self._m0, self._m0rms
         else:
             return self._m0
 

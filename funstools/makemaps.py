@@ -76,7 +76,7 @@ def get_mask(data, snr=3., rms=None, max_rms=None, ext=None, ext_rms=None, getrm
         ndarray
     """
     temp = get_fits(data, 'data', ext)
-    if len(temp.shape) is not 3:
+    if len(temp.shape) != 3:
         raise TypeError('Input data is not 3D-cube.')
     if rms is None:
         if rmssize is None:
@@ -215,6 +215,8 @@ def save_fits(file, data, header=None, overwrite=None):
         if not overwrite:
             print('{}: File exists.'.format(file))
             return None
+    else:
+        overwrite = False
     if isfits(data):
         data.writeto(file, overwrite)
         return done[overwrite]
