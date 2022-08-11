@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="funstools",  # Replace with your own username
-    version="0.4.0",
+    version="0.5.0",
     author="Shinyoung Kim",
     author_email="radioshiny@gmail.com",
     description="FUNStools is python toolkit for FUNS project",
@@ -14,7 +14,7 @@ setup(
     url="https://github.com/radioshiny/funstools",
     packages=find_packages(),
     classifiers=[
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.9",
     ],
     python_requires='>=2.7',
 )
