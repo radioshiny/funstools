@@ -539,7 +539,7 @@ class Decompose(Cube2map):
             self._fitres3 = self.final_fit()
         return self._fitres3
 
-    def plot_fit(self, fit, vr=None, yr=None):
+    def plot_fit(self, fit, vr=None, yr=None, debug=False):
         """
         Interactive scan for fitting results.
         Plot fitting results over line profile on click position.
@@ -603,6 +603,11 @@ class Decompose(Cube2map):
         ltr = lsfig.add_axes([0.81, 0.67, 0.17, 0.3])
 
         def _onclick(event):
+            if debug:
+                print('event.inaxes =', event.inaxes)
+                print('lsmap.axes =', lsmap.axes)
+                print('event.inaxes == lsmap.axes', event.inaxes == lsmap.axes)
+                print('event.inaxes == ltl.axes', event.inaxes == ltl.axes)
             if event.inaxes == lsmap.axes:
                 self._pr = int(round(event.xdata))
                 self._pd = int(round(event.ydata))
@@ -630,12 +635,17 @@ class Decompose(Cube2map):
                 return
             r = self._pr
             d = self._pd
+            if debug:
+                print('(r, d) =', (r, d))
             ri = [-1, -1, -1, 0, 0, 0, +1, +1, +1]
             di = [-1, 0, +1, -1, 0, +1, -1, 0, +1]
             for i, ax in enumerate([lbl, lcl, ltl, lbc, lslin, ltc, lbr, lcr, ltr]):
                 ax.clear()
                 ax.set_xlim(*vr)
                 ax.set_ylim(*yr)
+                if debug:
+                    print('vr =', vr)
+                    print('yr =', yr)
                 if not i in [0, 1, 2]:
                     ax.set_yticklabels([])
                 if not i in [0, 3, 6]:
@@ -675,7 +685,8 @@ class Decompose(Cube2map):
             c = c.to_string('hmsdms').split(' ')
             lslin.annotate('R.A.: {} ({})'.format(r, c[0]), (0.03, 0.92), xycoords='axes fraction')
             lslin.annotate('Dec.: {} ({})'.format(d, c[1]), (0.03, 0.86), xycoords='axes fraction')
-            lslin.figure.canvas.draw()
+            # lslin.figure.canvas.draw()
+            plt.draw()
 
         lsfig.canvas.mpl_connect('button_press_event', _onclick)
         return lsfig, lsmap, lslin
