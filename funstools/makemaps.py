@@ -244,7 +244,7 @@ def wcs2d(hdu):
         wcs.WCS (with 2 axis)
     """
     if isinstance(hdu, fits.Header):
-        temp = np.zeros(tuple(hdu['NAXIS'+str(i+1)] for i in range(hdu['NAXIS'])))
+        temp = np.zeros(tuple(hdu['NAXIS'+str(i)] for i in range(hdu['NAXIS'], 0, -1)))
         hdu = fits.PrimaryHDU(temp, hdu)
     temp = check_axis(hdu, 2)
     return WCS(get_fits(temp, 'header'))
@@ -261,7 +261,7 @@ def header2d(hdu):
         fits.Header (with only 2axis)
     """
     if isinstance(hdu, fits.Header):
-        temp = np.zeros(tuple(hdu['NAXIS'+str(i+1)] for i in range(hdu['NAXIS'])))
+        temp = np.zeros(tuple(hdu['NAXIS'+str(i)] for i in range(hdu['NAXIS'], 0, -1)))
         hdu = fits.PrimaryHDU(temp, hdu)
     temp = check_axis(hdu, 2)
     return get_fits(temp, 'header')
