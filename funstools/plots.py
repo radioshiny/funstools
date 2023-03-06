@@ -124,13 +124,15 @@ def cut_profile(data, cut=None, step=0.5, width=5, w=None, dist=None, func='nanm
     #     ax.scatter(sx, sy, s=4, c='red', ec='none')
 
     func = getattr(np, func)
-    profile = np.zeros((4 if minmax else 2, ln+1))
+    profile = np.zeros((6 if minmax else 4, ln+1))
     profile[0] = lsample
-    profile[1] = func(data_cut, axis=0)
+    profile[1] = sx
+    profile[2] = sy
+    profile[3] = func(data_cut, axis=0)
 
     if minmax:
-        profile[2] = np.nanmin(data_cut, axis=0)
-        profile[3] = np.nanmax(data_cut, axis=0)
+        profile[4] = np.nanmin(data_cut, axis=0)
+        profile[5] = np.nanmax(data_cut, axis=0)
 
     return profile
 
