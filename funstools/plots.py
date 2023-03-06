@@ -1,8 +1,138 @@
 from .cube2map import Cube2map
 import os
+import numpy as np
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+from astropy.wcs import WCS
 from glob import glob
 from matplotlib import pyplot as plt
-import numpy as np
+from scipy.interpolate import splev
+from scipy.ndimage import map_coordinates
+
+
+def _conv2pixel(coords, ctype='coords', w=None, dist=None):
+    ct = u.get_physical_type(coords)
+
+    if ctype == 'coords':
+        if ct == 'dimensionless':
+            return tuple(map(float, coords))
+
+        elif w is not None:
+            if ct == 'angle':
+                sc = SkyCoord(coords[0], coords[1])
+                cvalues = w.world_to_pixel(sc)
+                return tuple(map(float, cvalues))
+
+            else:
+                raise ValueError('The input coordinates type is unknown.')
+
+        else:
+            raise ValueError('WCS information was not entered. The input coordinates could not be converted to pixels.')
+
+    elif ctype == 'length':
+        if ct == 'dimensionless':
+            return float(coords)
+
+        elif w is not None:
+            cdelt = w.to_header()['CDELT2']*u.Unit(w.to_header()['CUNIT2'])
+
+            if ct == 'angle':
+                return float(coords/cdelt)
+
+            elif ct == 'length' and dist is not None:
+                cdelt = cdelt.to(u.rad).value*dist
+                return float(coords/cdelt)
+
+            else:
+                print(coords, type(coords))
+                raise ValueError('The input value has unknown unit.')
+
+    else:
+        print(ct)
+        raise ValueError("'ctype' is unknown.")
+
+
+def cut_profile(data, cut=None, step=0.5, width=5, w=None, dist=None, func='nanmean', minmax=True):
+    if len(data.shape) != 2:
+        raise TypeError('The input data must have 2 dimensions.')
+
+    if data.shape[0] < 10 and data.shape[1] < 10:
+        raise TypeError('The input data size is too small (at least 10 by 10 px is required).')
+
+    if w is None and hasattr(data, 'header'):
+        w = WCS(data.header)
+
+    step = _conv2pixel(step, 'length', w, dist)
+    if minmax:
+        width = _conv2pixel(width, 'length', w, dist)
+    else:
+        width = None
+
+    if len(cut) == 2:
+        start, stop = cut
+        start = _conv2pixel(start, 'coords', w, dist)
+        stop = _conv2pixel(stop, 'coords', w, dist)
+
+    elif len(cut) == 3:
+        center, length, pa = cut
+        center = _conv2pixel(center, 'coords', w, dist)
+        length = _conv2pixel(length, 'length', w, dist)
+
+        center, length, pa = (250, 250), 400, 45
+        pa *= u.deg if u.get_physical_type(pa) == 'dimensionless' else 1.
+
+        start = (center[0]-length/2*np.sin(-pa), center[1]-length/2*np.cos(-pa))
+        stop = (center[0]+length/2*np.sin(-pa), center[1]+length/2*np.cos(-pa))
+
+    else:
+        raise ValueError("'cut' must be entered (start, stop) or (center, length, pa).")
+
+    length = np.sqrt((stop[0]-start[0])**2+(stop[1]-start[1])**2)
+    xyr = (stop[1]-start[1])/(stop[0]-start[0]) if stop[0] != start[0] else np.inf
+    angle = np.arctan(xyr)
+    ln = int(length/step)
+    li = (length-ln*step)/2
+    lsample = np.linspace(li, length-li, ln+1)
+    tck = [np.array([0., 0., 1., 1.]), [np.array([start[0], stop[0]]), np.array([start[1], stop[1]])], 1]
+    sx, sy = splev(lsample/length, tck)
+
+    wn = int(width/2/step)
+    wne = wn+5
+    wsample = np.linspace(-wne*step, wne*step, 2*wne+1)
+    xx = np.tile(sx, (2*wne+1, 1))-np.tile(wsample, (ln+1, 1)).T*np.sin(angle)
+    yy = np.tile(sy, (2*wne+1, 1))+np.tile(wsample, (ln+1, 1)).T*np.cos(angle)
+
+    grid_cut = np.stack([yy, xx])
+    bad_pixels = np.isnan(data)+np.isinf(data)
+    out_pixels = (xx < -0.5)+(yy < -0.5)+(xx > data.shape[1]-0.5)+(yy > data.shape[1]-0.5)
+    data_cut = data.copy()
+    data_cut[bad_pixels] = 0
+    data_cut = map_coordinates(data_cut, grid_cut, mode='nearest')
+    bad_cut = map_coordinates(bad_pixels, grid_cut, order=0, mode='constant', cval=np.nan)
+    out_cut = map_coordinates(out_pixels, grid_cut, order=0, mode='constant', cval=np.nan)
+    data_cut[bad_cut] = np.nan
+    data_cut[out_cut] = np.nan
+
+    xx = xx[5:-5]
+    yy = yy[5:-5]
+    data_cut = data_cut[5:-5]
+
+    # if debug:
+    #     fig, ax = plt.subplots(1, 1)
+    #     ax.imshow(data, origin='lower', cmap='Greys', vmin=0, vmax=230, interpolation='nearest')
+    #     ax.scatter(xx, yy, marker='s', s=16, c=data_cut, cmap='Greys', vmin=0, vmax=230, ec='none')
+    #     ax.scatter(sx, sy, s=4, c='red', ec='none')
+
+    func = getattr(np, func)
+    profile = np.zeros((4 if minmax else 2, ln+1))
+    profile[0] = lsample
+    profile[1] = func(data_cut, axis=0)
+
+    if minmax:
+        profile[2] = np.nanmin(data_cut, axis=0)
+        profile[3] = np.nanmax(data_cut, axis=0)
+
+    return profile
 
 
 def full_line_scan(loc='', vr=None, yi=1.5, cut=None, ver='otfpro'):
