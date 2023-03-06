@@ -77,8 +77,6 @@ def cut_profile(data, cut=None, step=0.5, width=5, w=None, dist=None, func='nanm
         center, length, pa = cut
         center = _conv2pixel(center, 'coords', w, dist)
         length = _conv2pixel(length, 'length', w, dist)
-
-        center, length, pa = (250, 250), 400, 45
         pa *= u.deg if u.get_physical_type(pa) == 'dimensionless' else 1.
 
         start = (center[0]-length/2*np.sin(-pa), center[1]-length/2*np.cos(-pa))
