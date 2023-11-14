@@ -15,7 +15,7 @@ from matplotlib.colors import TABLEAU_COLORS as tabcolor
 _f2s = np.sqrt(8.*np.log(2.))
 
 
-def predict_peaks(data, rms):
+def predict_peaks(data, rms, sens=3.):
     if not isinstance(data, np.ndarray):
         raise TypeError("'data' should be given as numpy.ndarray.")
     if not isinstance(rms, float):
@@ -23,11 +23,11 @@ def predict_peaks(data, rms):
     if not len(data.shape) == 1:
         raise TypeError("'data' should be given as 1D-spectrum.")
     grad = -np.gradient(np.gradient(data))
-    peaks, _ = find_peaks(grad, prominence=rms/3)
+    peaks, _ = find_peaks(grad, prominence=rms/sens)
     return peaks[data[peaks] > rms]
 
 
-def find_comps(data, rms, mask=None, ss=0., vs=0.):
+def find_comps(data, rms, mask=None, ss=0., vs=0., sens=3.):
     if not isinstance(data, np.ndarray):
         raise TypeError("'data' should be given as numpy.ndarray.")
     if not len(data.shape) == 3:
@@ -48,7 +48,7 @@ def find_comps(data, rms, mask=None, ss=0., vs=0.):
             if not mask[y, x]:
                 comps[:, y, x] = np.nan
                 continue
-            pl = predict_peaks(data[:, y, x], rms[y, x])
+            pl = predict_peaks(data[:, y, x], rms[y, x], sens)
             comps[:, y, x][pl] = 1.
     ss = int(np.ceil(float(ss)/2))
     vs = int(np.ceil(vs))
@@ -80,7 +80,7 @@ class Decompose(Cube2map):
 
     def __init__(self, cube=None, ext=None, getrms='both', rmssize=None, max_rms=None,
                  snr=3., spasmo_find=3, velsmo_find=3, spasmo_fit=1, velsmo_fit=1,
-                 mlim=0.1, wmin=0.1, wmax=1.):
+                 mlim=0.1, wmin=0.1, wmax=1., w0=0.2, sens=3.):
         """
         Construct a 'Decompose' object.
 
@@ -106,8 +106,18 @@ class Decompose(Cube2map):
         self._velsmo_find = float(velsmo_find)
         self._spasmo_find = float(spasmo_find)
         self._mlim = float(mlim)
-        self._smin = float(wmin)/_f2s
-        self._smax = float(wmax)/_f2s
+
+        if float(wmin) < float(w0) < float(wmax):
+            self._smin = float(wmin)/_f2s
+            self._smax = float(wmax)/_f2s
+            self._s0 = float(w0)/_f2s
+        else:
+            raise ValueError("'wmin', 'wmax', and 'w0' should be given values with a 'w_min < w_0 < w_max' condition.")
+
+        if 0.5 <= float(sens) <= 5:
+            self._sens = float(sens)
+        else:
+            raise ValueError("'sens' should be given a value between 0.5 and 5.")
 
     _datafc = None
     _mdatafc = None
@@ -155,7 +165,7 @@ class Decompose(Cube2map):
         """
         if self._comps is None:
             self._comps, self._nc = find_comps(self.mdata_for_finding, self.rms_for_finding,
-                                              self.det, self._spasmo_find, self._velsmo_find)
+                                              self.det, self._spasmo_find, self._velsmo_find, self._sens)
 
             # 28nov21 - rms_for_finding is too small value for finding. roll back.
             # self._comps, self._nc = find_comps(self.mdata_for_finding, self.srms,
@@ -170,7 +180,7 @@ class Decompose(Cube2map):
         """
         if self._nc is None:
             self._comps, self._nc = find_comps(self.mdata_for_finding, self.rms_for_finding,
-                                              self.det, self._spasmo_find, self._velsmo_find)
+                                              self.det, self._spasmo_find, self._velsmo_find, self._sens)
 
             # 28nov21 - rms_for_finding is too small value for finding. roll back.
             # self._comps, self._nc = find_comps(self.mdata_for_finding, self.srms,
@@ -267,7 +277,7 @@ class Decompose(Cube2map):
                 bmin[:, 1] = self.x[guess]-self._mlim
                 bmax[:, 1] = self.x[guess]+self._mlim
                 # stddev
-                ig[:, 2] = 0.2/_f2s
+                ig[:, 2] = self._s0
                 bmin[:, 2] = self._smin
                 bmax[:, 2] = self._smax
                 return curve_fit(self._gauss(cn), self.x[self._rmssize:-self._rmssize], y[self._rmssize:-self._rmssize],

@@ -10,18 +10,22 @@ from scipy.interpolate import splev
 from scipy.ndimage import map_coordinates
 
 
+def _roundfloat(value, precision=5):
+    return round(float(value), precision)
+
+
 def _conv2pixel(coords, ctype='coords', w=None, dist=None):
     ct = u.get_physical_type(coords)
 
     if ctype == 'coords':
         if ct == 'dimensionless':
-            return tuple(map(float, coords))
+            return tuple(map(_roundfloat, coords))
 
         elif w is not None:
             if ct == 'angle':
                 sc = SkyCoord(coords[0], coords[1])
                 cvalues = w.world_to_pixel(sc)
-                return tuple(map(float, cvalues))
+                return tuple(map(_roundfloat, cvalues))
 
             else:
                 raise ValueError('The input coordinates type is unknown.')
@@ -31,17 +35,17 @@ def _conv2pixel(coords, ctype='coords', w=None, dist=None):
 
     elif ctype == 'length':
         if ct == 'dimensionless':
-            return float(coords)
+            return _roundfloat(coords)
 
         elif w is not None:
             cdelt = w.to_header()['CDELT2']*u.Unit(w.to_header()['CUNIT2'])
 
             if ct == 'angle':
-                return float(coords/cdelt)
+                return _roundfloat(coords/cdelt)
 
             elif ct == 'length' and dist is not None:
                 cdelt = cdelt.to(u.rad).value*dist
-                return float(coords/cdelt)
+                return _roundfloat(coords/cdelt)
 
             else:
                 print(coords, type(coords))
@@ -85,10 +89,10 @@ def cut_profile(data, cut=None, step=0.5, width=5, w=None, dist=None, func='nanm
     else:
         raise ValueError("'cut' must be entered (start, stop) or (center, length, pa).")
 
-    length = np.sqrt((stop[0]-start[0])**2+(stop[1]-start[1])**2)
+    length = _roundfloat(np.sqrt((stop[0]-start[0])**2+(stop[1]-start[1])**2))
     xyr = (stop[1]-start[1])/(stop[0]-start[0]) if stop[0] != start[0] else np.inf
     angle = np.arctan(xyr)
-    ln = int(length/step)
+    ln = int(round(length/step, 3))
     li = (length-ln*step)/2
     lsample = np.linspace(li, length-li, ln+1)
     tck = [np.array([0., 0., 1., 1.]), [np.array([start[0], stop[0]]), np.array([start[1], stop[1]])], 1]
