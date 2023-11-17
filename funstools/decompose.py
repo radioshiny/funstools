@@ -561,7 +561,7 @@ class Decompose(Cube2map):
             self._fitres3 = self.final_fit()
         return self._fitres3
 
-    def plot_fit(self, fit, vr=None, yr=None, pp=True, debug=False):
+    def plot_fit(self, fit, vr=None, yr=None, pp=True, title=None, debug=False):
         """
         Interactive scan for fitting results.
         Plot fitting results over line profile on click position.
@@ -621,6 +621,9 @@ class Decompose(Cube2map):
         # print params
         if pp:
             lsmap.annotate(self.pparams, xy=(0.05, 0.95), xycoords='axes fraction', ha='left', va='top', fontsize='small', color='white')
+        # print title
+        if title is not None:
+            lsmap.set_title(title, fontsize='medium')
         # line plot
         lbl = lsfig.add_axes([0.47, 0.07, 0.17, 0.3])
         lcl = lsfig.add_axes([0.47, 0.37, 0.17, 0.3])
