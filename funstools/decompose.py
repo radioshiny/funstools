@@ -119,6 +119,18 @@ class Decompose(Cube2map):
         else:
             raise ValueError("'sens' should be given a value between 0.5 and 5.")
 
+        self.pparams = f'max_rms     = {self._maxrms}\n' \
+                       f'snr         = {self._snr}\n' \
+                       f'spasmo_find = {self._spasmo_find}\n' \
+                       f'velsmo_find = {self._velsmo_find}\n' \
+                       f'spasmo_fit  = {self._spasmo}\n' \
+                       f'velsmo_fit  = {self._velsmo}\n' \
+                       f'mlim        = {self._mlim}\n' \
+                       f'wmin        = {self._smin*_f2s}\n' \
+                       f'wmax        = {self._smax*_f2s}\n' \
+                       f'w0          = {self._s0*_f2s}\n' \
+                       f'sens        = {self._sens}'
+
     _datafc = None
     _mdatafc = None
     _rmsfc = None
@@ -549,7 +561,7 @@ class Decompose(Cube2map):
             self._fitres3 = self.final_fit()
         return self._fitres3
 
-    def plot_fit(self, fit, vr=None, yr=None, debug=False):
+    def plot_fit(self, fit, vr=None, yr=None, pp=True, debug=False):
         """
         Interactive scan for fitting results.
         Plot fitting results over line profile on click position.
@@ -565,6 +577,9 @@ class Decompose(Cube2map):
                 Range of velocity axis for line plot.
             yr : list or tuple, optional
                 Range of temperature axis for line plot.
+            pp : bool
+                Print the parameters of decompose.
+                Default is True.
 
         Returns:
             tuple (plt.figure, plt.subplot, plt.subplot)
@@ -597,10 +612,15 @@ class Decompose(Cube2map):
         lsmap = lsfig.add_axes([0.06, 0.07, 0.36, 0.9], projection=self.wcs2d)
         lsmap.set_xlabel('R.A.')
         lsmap.set_ylabel('Dec.')
-        lsmap.imshow(imap, origin='lower', vmin=0, cmap='inferno')
+        cmap = plt.get_cmap('inferno')
+        cmap.set_bad('dimgray')
+        lsmap.imshow(imap, origin='lower', vmin=0, cmap=cmap)
         self._pp = lsmap.scatter(-100, -100, s=60, color='lime')
         lsmap.set_xlim(-0.5, self.nr-0.5)
         lsmap.set_ylim(-0.5, self.nd-0.5)
+        # print params
+        if pp:
+            lsmap.annotate(self.pparams, xy=(0.05, 0.95), xycoords='axes fraction', ha='left', va='top', fontsize='small', color='white')
         # line plot
         lbl = lsfig.add_axes([0.47, 0.07, 0.17, 0.3])
         lcl = lsfig.add_axes([0.47, 0.37, 0.17, 0.3])
